@@ -1,6 +1,7 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { db, type Customer, type Visit } from './db';
 import { liveQuery } from 'dexie';
+import seedDataJson from './seed-data.json';
 
 @Injectable({
   providedIn: 'root'
@@ -160,8 +161,23 @@ export class CustomerService {
   private async seedData() {
     // Double check to avoid race conditions
     const count = await db.customers.count();
-    if (count > 0) return;
+    if (count > 0 && typeof localStorage !== 'undefined' && !localStorage.getItem('did_reseed_new_contacts')) {
+       await db.customers.clear(); // wipe old mock
+       localStorage.setItem('did_reseed_new_contacts', 'true');
+    } else if (count > 0) {
+       return;
+    }
+    
+    const mappedSeedData: Omit<Customer, 'id'>[] = seedDataJson.map(item => ({
+      name: item.name || '',
+      lastName: (item as any).lastName || '',
+      phone: item.phone || '',
+      email: (item as any).email || '',
+      tags: [],
+    }));
+
     const initialCustomers: Omit<Customer, 'id'>[] = [
+      ...mappedSeedData,
       { name: 'Jozef', lastName: 'Mrkva', phone: '0901 123 456', tags: ['Pravidelný', 'Fade'], lastVisit: new Date('2024-03-15') },
       { name: 'Peter', lastName: 'Slanina', phone: '0905 555 666', tags: ['VIP', 'Brada'], lastVisit: new Date('2024-04-10') },
       { name: 'Andrej', lastName: 'Hruška', phone: '0911 222 333', tags: ['Novi'], lastVisit: new Date('2024-02-20') },
