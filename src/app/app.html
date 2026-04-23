@@ -1,65 +1,55 @@
 <div class="flex flex-col h-screen bg-papi-dark text-[#e0e0e0] font-sans antialiased overflow-hidden">
   
   <!-- HEADER -->
-  <header class="h-16 md:h-20 bg-papi-dark/95 backdrop-blur-md border-b gold-border flex items-center gap-2 md:gap-4 px-3 md:px-8 shrink-0 z-50 transition-all w-full overflow-hidden">
-    <div class="font-display font-black tracking-tighter text-papi-gold uppercase text-[15px] md:text-2xl gold-glow shrink-0 mr-1 md:mr-2">
-      PAPI CRM
+  <header class="h-16 md:h-20 flex items-center gap-2 md:gap-4 px-3 md:px-8 shrink-0 z-50 transition-all w-full overflow-hidden">
+    <div class="font-display font-black tracking-tighter text-papi-gold text-[15px] md:text-2xl gold-glow shrink-0 mr-1 md:mr-4 flex items-center">
+      <span class="opacity-80 font-light italic mr-1">Papi</span>
+      <span class="tracking-[0.1em] uppercase">CRM</span>
     </div>
 
-    <!-- View Toggle -->
-    <div class="flex bg-papi-gray border border-white/5 p-1 rounded-lg shrink-0 mr-2 -ml-1">
+    <!-- View Toggle - Luxury Segmented Control -->
+    <div class="segmented-control shrink-0 mr-2 md:mr-6">
       <button 
         (click)="currentView.set('customers')"
-        [class.bg-papi-dark]="currentView() === 'customers'"
-        [class.text-papi-gold]="currentView() === 'customers'"
-        [class.text-gray-400]="currentView() !== 'customers'"
-        class="px-2 py-1.5 md:px-3 text-[10px] md:text-[11px] font-bold font-display uppercase tracking-wider rounded-md transition-all flex items-center justify-center">
-        <mat-icon class="text-[16px] md:mr-1">people</mat-icon>
+        [class.active]="currentView() === 'customers'">
+        <mat-icon class="text-[14px] md:mr-1.5 opacity-80">people</mat-icon>
         <span class="hidden md:inline">Klienti</span>
       </button>
       <button 
         (click)="currentView.set('calendar')"
-        [class.bg-papi-dark]="currentView() === 'calendar'"
-        [class.text-papi-gold]="currentView() === 'calendar'"
-        [class.text-gray-400]="currentView() !== 'calendar'"
-        class="px-2 py-1.5 md:px-3 text-[10px] md:text-[11px] font-bold font-display uppercase tracking-wider rounded-md transition-all flex items-center justify-center">
-        <mat-icon class="text-[16px] md:mr-1">event</mat-icon>
+        [class.active]="currentView() === 'calendar'">
+        <mat-icon class="text-[14px] md:mr-1.5 opacity-80">event</mat-icon>
         <span class="hidden md:inline">Kalendár</span>
       </button>
     </div>
 
-    <!-- ACTION BUTTONS -->
-    <button (click)="openExportModal()" class="shrink-0 bg-papi-gray hover:bg-papi-gray/70 text-white font-bold w-9 h-9 md:w-auto md:h-auto md:px-4 md:py-2.5 rounded-lg border border-white/10 transition-all text-xs uppercase tracking-wider font-display flex items-center justify-center">
-      <mat-icon class="text-[18px] md:text-[16px] w-auto h-auto text-papi-gold">download</mat-icon>
-      <span class="hidden md:inline ml-2">EXPORT</span>
-    </button>
-    
-    <button (click)="openNewCustomer()" class="shrink-0 bg-papi-gold hover:bg-papi-gold-light text-black font-bold w-9 h-9 md:w-auto md:h-auto md:px-5 md:py-2.5 rounded-lg transition-all text-xs uppercase tracking-wider font-display active:scale-95 flex items-center justify-center">
-      <mat-icon class="text-[20px] md:text-[16px] w-auto h-auto">add</mat-icon>
-      <span class="hidden md:inline ml-2">NOVÝ KLIENT</span>
-    </button>
-    
     <!-- STREDOVÝ SEARCH -->
-    <div class="flex-1 min-w-0 max-w-md relative group md:ml-auto">
-      <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-papi-gold transition-colors text-[18px] flex items-center justify-center">search</mat-icon>
+    <div class="flex-1 min-w-0 max-w-sm relative group md:ml-auto">
+      <mat-icon class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-papi-gold transition-colors text-[18px] flex items-center justify-center pointer-events-none">search</mat-icon>
       <input 
         [ngModel]="cs.searchQuery()" 
         (ngModelChange)="cs.searchQuery.set($event)"
-        class="w-full bg-papi-gray/50 border border-white/5 rounded-full py-2.5 pl-9 md:pl-10 pr-8 text-[12px] md:text-sm focus:outline-none focus:border-papi-gold/50 focus:ring-1 focus:ring-papi-gold/50 transition-all shadow-inner text-white placeholder:text-gray-600 truncate"
-        placeholder="Hľadať zákazníka...">
+        class="w-full luxury-input pl-10 pr-10 truncate placeholder:text-white/30"
+        placeholder="Hľadať...">
       
       @if (cs.searchQuery()) {
         <button 
           (click)="cs.searchQuery.set('')"
-          class="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white transition-colors">
+          class="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors">
           <mat-icon class="text-[16px] flex items-center justify-center">cancel</mat-icon>
         </button>
       }
     </div>
 
-    <!-- SYNC BADGE -->
-    <div class="hidden lg:flex shrink-0 items-center gap-2 px-3 h-10 bg-papi-gray rounded-lg border border-white/5 text-[10px] text-gray-400 ml-2">
-      <span class="w-2 h-2 rounded-full bg-green-500"></span> OFFLINE SYNC OK
+    <!-- ACTION BUTTONS -->
+    <div class="flex items-center gap-2 ml-auto md:ml-4">
+      <button (click)="openExportModal()" class="circle-btn" title="Exportovať CSV">
+        <mat-icon class="text-[18px]">file_download</mat-icon>
+      </button>
+      
+      <button (click)="openNewCustomer()" class="circle-btn bg-papi-gold/10 !border-papi-gold/30 text-papi-gold hover:!bg-papi-gold hover:!text-black" title="Nový Klient">
+        <mat-icon class="text-[20px]">add</mat-icon>
+      </button>
     </div>
   </header>
 
@@ -72,31 +62,34 @@
         [ngClass]="selectedCustomer() ? 'hidden md:flex' : 'flex'"
         class="w-full md:w-[350px] border-r gold-border flex-col bg-papi-dark shrink-0 custom-scrollbar overflow-y-auto absolute md:relative inset-0 z-10 md:z-auto">
         <!-- Quick Filters (Mock UI from Design) -->
-      <div class="p-4 bg-papi-gray/30 flex gap-2 overflow-x-auto custom-scrollbar border-b border-white/5 shrink-0">
+      <div class="p-4 bg-transparent flex gap-2 overflow-x-auto custom-scrollbar border-b border-white/5 shrink-0">
         <button (click)="setFilter('')" 
                 [class.border-papi-gold]="!cs.searchQuery()" [class.text-papi-gold]="!cs.searchQuery()"
-                [class.border-white/10]="cs.searchQuery()" [class.text-gray-500]="cs.searchQuery()"
-                class="px-3 py-1 rounded-full border text-[10px] font-bold uppercase whitespace-nowrap transition-colors">Všetci</button>
+                [class.border-white/10]="cs.searchQuery()" [class.text-white/40]="cs.searchQuery()"
+                class="px-4 py-1.5 rounded-full border text-[9px] font-medium tracking-[0.2em] uppercase whitespace-nowrap transition-all hover:border-white/30 backdrop-blur-sm">Všetci</button>
         <button (click)="setFilter('VIP')" 
                 [class.border-papi-gold]="cs.searchQuery() === 'VIP'" [class.text-papi-gold]="cs.searchQuery() === 'VIP'"
-                [class.border-white/10]="cs.searchQuery() !== 'VIP'" [class.text-gray-500]="cs.searchQuery() !== 'VIP'"
-                class="px-3 py-1 rounded-full border text-[10px] font-bold uppercase whitespace-nowrap transition-colors border-white/10">VIP</button>
+                [class.border-white/10]="cs.searchQuery() !== 'VIP'" [class.text-white/40]="cs.searchQuery() !== 'VIP'"
+                class="px-4 py-1.5 rounded-full border text-[9px] font-medium tracking-[0.2em] uppercase whitespace-nowrap transition-all hover:border-white/30 backdrop-blur-sm">VIP</button>
         <button (click)="setFilter('Brada')" 
                 [class.border-papi-gold]="cs.searchQuery() === 'Brada'" [class.text-papi-gold]="cs.searchQuery() === 'Brada'"
-                [class.border-white/10]="cs.searchQuery() !== 'Brada'" [class.text-gray-500]="cs.searchQuery() !== 'Brada'"
-                class="px-3 py-1 rounded-full border text-[10px] font-bold uppercase whitespace-nowrap transition-colors border-white/10">Brada</button>
+                [class.border-white/10]="cs.searchQuery() !== 'Brada'" [class.text-white/40]="cs.searchQuery() !== 'Brada'"
+                class="px-4 py-1.5 rounded-full border text-[9px] font-medium tracking-[0.2em] uppercase whitespace-nowrap transition-all hover:border-white/30 backdrop-blur-sm">Brada</button>
         <button (click)="setFilter('Farbenie')" 
                 [class.border-papi-gold]="cs.searchQuery() === 'Farbenie'" [class.text-papi-gold]="cs.searchQuery() === 'Farbenie'"
-                [class.border-white/10]="cs.searchQuery() !== 'Farbenie'" [class.text-gray-500]="cs.searchQuery() !== 'Farbenie'"
-                class="px-3 py-1 rounded-full border text-[10px] font-bold uppercase whitespace-nowrap transition-colors border-white/10">Farbenie</button>
+                [class.border-white/10]="cs.searchQuery() !== 'Farbenie'" [class.text-white/40]="cs.searchQuery() !== 'Farbenie'"
+                class="px-4 py-1.5 rounded-full border text-[9px] font-medium tracking-[0.2em] uppercase whitespace-nowrap transition-all hover:border-white/30 backdrop-blur-sm">Farbenie</button>
       </div>
 
-      <div class="flex-1 p-4 space-y-2">
+      <div class="flex-1 p-3 md:p-5 space-y-3 pb-[100px]">
         @for (customer of cs.filteredCustomers(); track customer.id; let i = $index) {
           <!-- Abecedný Divider -->
           @if (isFirstOfLetter(customer, i)) {
-             <div class="text-papi-gold/40 text-[10px] font-bold px-4 pt-4 pb-1 uppercase tracking-[0.2em] font-display">
-               {{ customer.lastName[0] }}
+             <div class="flex items-center gap-4 mt-6 mb-2">
+               <div class="text-[#D8B589]/50 text-2xl font-light font-display">
+                 {{ customer.lastName[0] }}
+               </div>
+               <div class="h-[1px] flex-1 bg-gradient-to-r from-white/10 to-transparent"></div>
              </div>
           }
 
@@ -110,33 +103,34 @@
             (contextmenu)="onContextMenu($event)"
             (keydown.enter)="selectCustomer(customer)"
             tabindex="0"
-            [class.border-papi-gold/30]="selectedCustomer()?.id === customer.id"
-            [class.bg-papi-gray]="selectedCustomer()?.id === customer.id"
-            [class.ring-1]="selectedCustomer()?.id === customer.id"
-            [class.ring-papi-gold/20]="selectedCustomer()?.id === customer.id"
-            class="group bg-papi-gray/40 border border-white/5 p-4 rounded-2xl cursor-pointer transition-all flex justify-between items-center opacity-0 translate-y-4 hover:border-papi-gold/30">
-            <div class="flex items-center gap-4">
-              <div [class.bg-gradient-to-tr]="selectedCustomer()?.id === customer.id"
-                   [class.from-papi-gold]="selectedCustomer()?.id === customer.id"
-                   [class.to-papi-gold-light]="selectedCustomer()?.id === customer.id"
-                   [class.bg-gray-700]="selectedCustomer()?.id !== customer.id"
-                   [class.text-black]="selectedCustomer()?.id === customer.id"
-                   [class.text-gray-300]="selectedCustomer()?.id !== customer.id"
-                   class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs">
+            [class.border-papi-gold/40]="selectedCustomer()?.id === customer.id"
+            [class.bg-[#111112]]="selectedCustomer()?.id === customer.id"
+            [class.bg-white/[0.02]]="selectedCustomer()?.id !== customer.id"
+            class="group border border-white/5 p-4 rounded-[20px] cursor-pointer transition-all duration-300 flex justify-between items-center opacity-0 translate-y-4 hover:border-papi-gold/20 hover:bg-[#111112] shadow-sm relative overflow-hidden">
+            
+            @if (selectedCustomer()?.id === customer.id) {
+              <div class="absolute inset-0 bg-gradient-to-r from-[#D8B589]/5 to-transparent pointer-events-none"></div>
+            }
+
+            <div class="flex items-center gap-4 relative z-10">
+              <div [class.border-papi-gold]="selectedCustomer()?.id === customer.id"
+                   [class.text-papi-gold]="selectedCustomer()?.id === customer.id"
+                   [class.border-white/10]="selectedCustomer()?.id !== customer.id"
+                   [class.text-white/40]="selectedCustomer()?.id !== customer.id"
+                   class="w-11 h-11 rounded-full flex items-center justify-center font-light text-sm border bg-black shrink-0 font-display transition-colors">
                 {{ getInitials(customer) }}
               </div>
-              <div>
+              <div class="flex flex-col">
                 <h3 [class.text-papi-gold]="selectedCustomer()?.id === customer.id"
-                    [class.font-bold]="selectedCustomer()?.id === customer.id"
-                    [class.text-white]="selectedCustomer()?.id !== customer.id"
-                    class="text-sm transition-colors">{{ customer.name }} {{ customer.lastName }}</h3>
-                <p class="text-gray-500 text-[10px]">{{ customer.phone }}</p>
+                    [class.text-white/90]="selectedCustomer()?.id !== customer.id"
+                    class="text-[15px] font-medium tracking-tight mb-0.5 transition-colors leading-none">{{ customer.name }} {{ customer.lastName }}</h3>
+                <p class="text-white/40 text-[11px] font-light">{{ customer.phone }}</p>
               </div>
             </div>
             @if (customer.lastVisit) {
-              <div class="text-right">
-                <div class="text-[8px] text-gray-500 uppercase tracking-widest">Posledná</div>
-                <div class="text-[10px] text-white">{{ customer.lastVisit | date:'dd.MM.yy' }}</div>
+              <div class="text-right relative z-10 shrink-0">
+                <div class="text-[9px] text-[#D8B589] opacity-70 uppercase tracking-[0.1em] font-medium mb-1">Posledná</div>
+                <div class="text-[11px] text-white/50">{{ customer.lastVisit | date:'dd.MM.yy' }}</div>
               </div>
             }
           </div>
@@ -158,9 +152,14 @@
       </app-customer-detail>
     } @else {
       <!-- Empty State -->
-      <section class="hidden md:flex flex-1 bg-papi-gray/20 flex-col p-8 items-center justify-center text-gray-700 select-none">
-        <mat-icon class="text-8xl w-auto h-auto mb-4 opacity-10">content_cut</mat-icon>
-        <p class="font-display uppercase tracking-[0.3em] text-sm font-bold opacity-30 text-center">Vyberte zákazníka<br><span class="text-[10px] normal-case tracking-normal">pre zobrazenie detailov</span></p>
+      <section class="hidden md:flex flex-1 bg-gradient-to-br from-papi-dark to-papi-gray flex-col p-8 items-center justify-center text-white/20 select-none relative overflow-hidden">
+        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(216,181,137,0.03)_0%,transparent_50%)] pointer-events-none"></div>
+        <mat-icon class="text-9xl w-auto h-auto mb-6 opacity-5 font-light" style="transform: scale(1.5);">auto_awesome</mat-icon>
+        <h2 class="font-display font-light text-[2.5rem] tracking-[0.2em] text-papi-gold-light mt-8 opacity-30">PAPI CRM</h2>
+        <span class="text-[10px] uppercase tracking-[0.4em] mt-4 opacity-50 relative">Exkluzívna správa salónu</span>
+        <div class="absolute bottom-12 text-[10px] tracking-widest text-[#D8B589] opacity-20 uppercase font-display">
+          Luxusný systém pre profesionálov
+        </div>
       </section>
       }
     } @else {

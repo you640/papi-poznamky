@@ -1,63 +1,74 @@
-<section class="flex-1 bg-papi-gray/20 flex flex-col p-4 md:p-8 overflow-hidden relative">
+<section class="flex-1 bg-papi-gray/10 flex flex-col p-4 md:p-8 overflow-hidden relative">
   <!-- Detail Header -->
-  <div class="flex flex-col md:flex-row justify-between items-start mb-6 md:mb-8 animate-in fade-in slide-in-from-top-4 duration-500 gap-4 md:gap-0">
+  <div class="flex flex-col md:flex-row justify-between items-start mb-6 md:mb-10 animate-in fade-in slide-in-from-top-4 duration-[800ms] ease-out relative z-10 gap-4 md:gap-0">
     @let c = customer();
-    <div class="flex items-center gap-4 md:gap-6 w-full">
+    <div class="flex items-center gap-4 md:gap-8 w-full">
       <!-- Back button for mobile -->
-      <button (click)="closed.emit()" class="md:hidden w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white hover:border-papi-gold/50 transition-all shrink-0">
+      <button (click)="closed.emit()" class="md:hidden w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:border-papi-gold/50 transition-all shrink-0 backdrop-blur-md">
         <mat-icon class="text-[18px]">arrow_back</mat-icon>
       </button>
 
-      <div class="w-16 h-16 md:w-24 md:h-24 rounded-2xl md:rounded-3xl bg-gradient-to-tr from-papi-gold to-papi-gold-light p-[2px] shrink-0">
-        <div class="w-full h-full bg-papi-dark rounded-[14px] md:rounded-[22px] flex items-center justify-center text-papi-gold text-2xl md:text-3xl font-bold font-display">
+      <!-- Luxurious Avatar -->
+      <div class="w-16 h-16 md:w-[110px] md:h-[110px] rounded-full border border-papi-gold/20 p-[2px] shrink-0 shadow-[0_0_30px_rgba(216,181,137,0.1)]">
+        <div class="w-full h-full bg-[#0d0d0e] rounded-full flex items-center justify-center text-papi-gold text-2xl md:text-[2.5rem] font-light font-display">
           {{ getInitials(c) }}
         </div>
       </div>
+      
       <div class="flex-1 min-w-0">
-        <div class="flex flex-wrap items-center gap-2 md:gap-3 mb-1">
-          <h1 class="text-2xl md:text-4xl font-bold text-white font-display truncate">{{ c.name }} {{ c.lastName }}</h1>
-          <span class="px-2 py-0.5 bg-papi-gold/20 text-papi-gold text-[8px] md:text-[10px] font-bold rounded uppercase tracking-wider border border-papi-gold/30 shrink-0">VIP</span>
+        <div class="flex flex-wrap items-center gap-2 md:gap-3 md:mb-1">
+          <h1 class="text-2xl md:text-[2.8rem] md:leading-[1] font-display font-light text-white truncate tracking-tight">{{ c.name }} <span class="font-normal">{{ c.lastName }}</span></h1>
+          @if(c.tags.includes('VIP')) {
+            <span class="px-3 py-1 bg-gradient-to-r from-papi-gold to-papi-gold-light text-black text-[9px] font-bold rounded-full uppercase tracking-[0.2em] shadow-lg shrink-0 flex items-center gap-1">
+              <mat-icon class="text-[10px]">star</mat-icon> VIP
+            </span>
+          }
         </div>
-        <p class="text-gray-400 flex flex-wrap items-center gap-2 md:gap-4 text-[10px] md:text-xs">
-          <span class="flex items-center gap-1">
-            <mat-icon class="text-[14px] w-auto h-auto">phone</mat-icon> {{ c.phone }}
+        
+        <div class="h-[1px] w-12 bg-papi-gold/30 my-2 md:my-3 hidden md:block"></div>
+        
+        <p class="text-white/50 flex flex-wrap items-center gap-2 md:gap-5 text-[11px] md:text-sm font-light">
+          <span class="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer">
+            <mat-icon class="text-[14px] md:text-[16px] text-papi-gold">phone_iphone</mat-icon> {{ c.phone }}
           </span>
           @if (c.email) {
-            <span class="flex items-center gap-1 truncate max-w-full">
-              <mat-icon class="text-[14px] w-auto h-auto shrink-0">email</mat-icon> <span class="truncate">{{ c.email }}</span>
+            <span class="flex items-center gap-1.5 truncate max-w-full hover:text-white transition-colors cursor-pointer">
+              <mat-icon class="text-[14px] md:text-[16px] text-papi-gold shrink-0">mail</mat-icon> <span class="truncate">{{ c.email }}</span>
             </span>
           } @else {
-            <span class="flex items-center gap-1 opacity-40 italic">
-              <mat-icon class="text-[14px] w-auto h-auto">email_outline</mat-icon> Bez e-mailu
+            <span class="flex items-center gap-1.5 opacity-40 italic">
+              <mat-icon class="text-[14px] md:text-[16px]">mail</mat-icon> Bez e-mailu
             </span>
           }
         </p>
         
         <!-- Tags in Detail -->
-        <div class="flex flex-wrap gap-2 mt-2 md:mt-3">
+        <div class="flex flex-wrap gap-2 mt-3 md:mt-4">
           @for (tag of c.tags; track tag) {
-            <span class="px-2 py-0.5 rounded-md bg-papi-gold/10 border border-papi-gold/20 text-[8px] md:text-[9px] text-papi-gold uppercase font-bold tracking-wider">
-              #{{ tag }}
-            </span>
+            @if(tag !== 'VIP') {
+              <span class="px-2.5 py-1 rounded-sm bg-white/5 border border-white/10 text-[9px] text-white/70 uppercase font-medium tracking-widest backdrop-blur-sm">
+                {{ tag }}
+              </span>
+            }
           }
         </div>
       </div>
     </div>
     
-    <!-- Desktop top right controls (mobile edits will move down or stay if wrapped properly, but let's align them) -->
-    <div class="flex gap-2 md:gap-3 absolute md:relative right-4 top-4 md:right-auto md:top-auto">
+    <!-- Controls -->
+    <div class="flex gap-2 md:gap-3 absolute md:relative right-2 top-2 md:right-auto md:top-auto z-20">
       @if (isEditing()) {
-        <button (click)="saveChanges()" class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 px-4 py-2 rounded-xl text-xs font-bold hover:bg-emerald-500/20 transition-all flex items-center gap-2">
+        <button (click)="saveChanges()" class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 px-4 py-2 rounded-full text-xs font-bold hover:bg-emerald-500/20 transition-all flex items-center gap-2">
           <mat-icon class="text-[16px] w-auto h-auto">check</mat-icon> ULOŽIŤ
         </button>
-        <button (click)="toggleEdit()" class="bg-white/5 border border-white/10 text-gray-400 px-4 py-2 rounded-xl text-xs font-bold hover:bg-white/10 transition-all">
+        <button (click)="toggleEdit()" class="bg-white/5 border border-white/10 text-gray-400 px-4 py-2 rounded-full text-xs font-bold hover:bg-white/10 transition-all">
           ZRUŠIŤ
         </button>
       } @else {
-        <button (click)="toggleEdit()" class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white hover:border-papi-gold/50 transition-all">
-          <mat-icon class="text-[18px]">edit</mat-icon>
+        <button (click)="toggleEdit()" class="circle-btn">
+          <mat-icon class="text-[16px]">edit_square</mat-icon>
         </button>
-        <button (click)="closed.emit()" class="hidden md:flex w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 items-center justify-center text-red-500 hover:bg-red-500/20 transition-all">
+        <button (click)="closed.emit()" class="hidden md:flex circle-btn ml-2">
           <mat-icon class="text-[18px]">close</mat-icon>
         </button>
       }
