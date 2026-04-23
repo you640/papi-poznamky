@@ -8,6 +8,7 @@ import { liveQuery } from 'dexie';
 export class CustomerService {
   private customersList = signal<Customer[]>([]);
   searchQuery = signal('');
+  private isSeeding = false;
 
   filteredCustomers = computed(() => {
     const query = this.searchQuery().toLowerCase().trim();
@@ -27,11 +28,16 @@ export class CustomerService {
 
   constructor() {
     // Sync Dexie to Signal
-    liveQuery(() => db.customers.toArray()).subscribe(c => {
+    liveQuery(() => db.customers.toArray()).subscribe(async c => {
       this.customersList.set(c);
-      // Seed data if empty
-      if (c.length === 0) {
-        this.seedData();
+      // Seed data if empty and not already seeding
+      if (c.length === 0 && !this.isSeeding) {
+        this.isSeeding = true;
+        try {
+          await this.seedData();
+        } finally {
+          this.isSeeding = false;
+        }
       }
     });
   }
@@ -59,7 +65,91 @@ export class CustomerService {
     return visitId;
   }
 
+  async updateVisit(id: number, changes: Partial<Visit>) {
+    return await db.visits.update(id, changes);
+  }
+
+  async exportToCSV(filters: { dateFrom: string, dateTo: string, tag: string }) {
+    const customers = await db.customers.toArray();
+    let visits = await db.visits.toArray();
+
+    // 1. Date filters on visits
+    if (filters.dateFrom) {
+      const fd = new Date(filters.dateFrom);
+      fd.setHours(0, 0, 0, 0);
+      visits = visits.filter(v => new Date(v.date) >= fd);
+    }
+    if (filters.dateTo) {
+      const td = new Date(filters.dateTo);
+      td.setHours(23, 59, 59, 999);
+      visits = visits.filter(v => new Date(v.date) <= td);
+    }
+
+    // 2. Format as flat table Array
+    const rows = [];
+    // Header
+    rows.push(['Zákazník', 'Telefón', 'Tagy', 'Dátum Návštevy', 'Služba', 'Cena (€)', 'Poznámka Návštevy', 'Poznámka Zákazníka']);
+
+    for (const customer of customers) {
+      // 3. Tag filter
+      if (filters.tag) {
+        const lowerTag = filters.tag.toLowerCase().trim();
+        const hasTag = customer.tags.some(t => t.toLowerCase().includes(lowerTag));
+        if (!hasTag) continue;
+      }
+
+      const cVisits = visits.filter(v => v.customerId === customer.id);
+      
+      const escapeCSV = (val: string | number | undefined | null) => {
+        if (val == null) return '""';
+        const str = String(val).replace(/"/g, '""'); // Escaping double quotes
+        return `"${str}"`;
+      };
+
+      const custName = escapeCSV(`${customer.name} ${customer.lastName}`);
+      const custPhone = escapeCSV(customer.phone);
+      const custTags = escapeCSV(customer.tags.join(', '));
+      const custNotes = escapeCSV(customer.notes);
+
+      if (cVisits.length > 0) {
+        cVisits.forEach(v => {
+          const vDate = escapeCSV(new Date(v.date).toLocaleDateString('sk-SK'));
+          const vService = escapeCSV(v.service);
+          const vPrice = escapeCSV(v.price);
+          const vNote = escapeCSV(v.note);
+          rows.push([custName, custPhone, custTags, vDate, vService, vPrice, vNote, custNotes]);
+        });
+      } else {
+        // Only include customers with no visits in range IF date range wasn't strict
+        // Or include them explicitly so user gets full filtered base
+        // We will include them but with empty visit data
+        rows.push([custName, custPhone, custTags, '""', '""', '""', '""', custNotes]);
+      }
+    }
+
+    // Build the csv string
+    const csvContent = rows.map(r => r.join(',')).join('\n');
+    
+    // Trigger download
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' }); // BOM for Excel encoding
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `px-crm-export-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    
+    // Cleanup
+    setTimeout(() => {
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }, 100);
+  }
+
   private async seedData() {
+    // Double check to avoid race conditions
+    const count = await db.customers.count();
+    if (count > 0) return;
     const initialCustomers: Omit<Customer, 'id'>[] = [
       { name: 'Jozef', lastName: 'Mrkva', phone: '0901 123 456', tags: ['Pravidelný', 'Fade'], lastVisit: new Date('2024-03-15') },
       { name: 'Peter', lastName: 'Slanina', phone: '0905 555 666', tags: ['VIP', 'Brada'], lastVisit: new Date('2024-04-10') },

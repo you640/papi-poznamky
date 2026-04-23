@@ -17,6 +17,7 @@ export interface Customer {
   email?: string;
   lastVisit?: Date;
   tags: string[];
+  notes?: string;
 }
 
 export class AppDB extends Dexie {

@@ -27,20 +27,63 @@
             </span>
           }
         </p>
+        
+        <!-- Tags in Detail -->
+        <div class="flex gap-2 mt-3">
+          @for (tag of c.tags; track tag) {
+            <span class="px-2 py-0.5 rounded-md bg-papi-gold/10 border border-papi-gold/20 text-[9px] text-papi-gold uppercase font-bold tracking-wider">
+              #{{ tag }}
+            </span>
+          }
+        </div>
       </div>
     </div>
     <div class="flex gap-3">
-      <button (click)="edit.emit(c)" class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white hover:border-papi-gold/50 transition-all">
-        <mat-icon class="text-[18px]">edit</mat-icon>
-      </button>
-      <button (click)="closed.emit()" class="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 hover:bg-red-500/20 transition-all">
-        <mat-icon class="text-[18px]">close</mat-icon>
-      </button>
+      @if (isEditing()) {
+        <button (click)="saveChanges()" class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 px-4 py-2 rounded-xl text-xs font-bold hover:bg-emerald-500/20 transition-all flex items-center gap-2">
+          <mat-icon class="text-[16px] w-auto h-auto">check</mat-icon> ULOŽIŤ
+        </button>
+        <button (click)="toggleEdit()" class="bg-white/5 border border-white/10 text-gray-400 px-4 py-2 rounded-xl text-xs font-bold hover:bg-white/10 transition-all">
+          ZRUŠIŤ
+        </button>
+      } @else {
+        <button (click)="toggleEdit()" class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white hover:border-papi-gold/50 transition-all">
+          <mat-icon class="text-[18px]">edit</mat-icon>
+        </button>
+        <button (click)="closed.emit()" class="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 hover:bg-red-500/20 transition-all">
+          <mat-icon class="text-[18px]">close</mat-icon>
+        </button>
+      }
     </div>
   </div>
 
-  <!-- Quick Stats -->
-  <div class="grid grid-cols-3 gap-4 mb-8">
+  @if (isEditing()) {
+    <!-- EDITING FORM -->
+    <div class="grid grid-cols-1 gap-6 mb-8 animate-in fade-in zoom-in-95 duration-300">
+      <div class="flex flex-col gap-2">
+        <label for="phoneInput" class="text-[10px] text-gray-500 uppercase tracking-widest font-bold ml-1">Telefónne číslo</label>
+        <div class="relative group">
+          <mat-icon class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-papi-gold text-[18px] w-auto h-auto">phone</mat-icon>
+          <input 
+            id="phoneInput"
+            [(ngModel)]="editPhone"
+            class="w-full bg-papi-gray/50 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-papi-gold/50 transition-all font-mono"
+            placeholder="Napr. 0912 345 678">
+        </div>
+      </div>
+      <div class="flex flex-col gap-2">
+        <label for="notesInput" class="text-[10px] text-gray-500 uppercase tracking-widest font-bold ml-1">Interné poznámky</label>
+        <textarea 
+          id="notesInput"
+          [(ngModel)]="editNotes"
+          rows="4"
+          class="w-full bg-papi-gray/50 border border-white/10 rounded-2xl p-4 text-white focus:outline-none focus:border-papi-gold/50 transition-all text-sm leading-relaxed"
+          placeholder="Zadajte dôležité informácie o klientovi..."></textarea>
+      </div>
+    </div>
+  } @else {
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-3 gap-4 mb-8">
     <div class="bg-papi-gray border border-white/5 p-4 rounded-2xl">
       <div class="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Celkový obrat</div>
       <div class="text-2xl font-bold text-papi-gold font-display">482,00 €</div>
@@ -62,17 +105,44 @@
       <h4 class="text-xs font-bold text-gray-500 uppercase tracking-[0.2em] mb-4">História návštev</h4>
       <div class="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-2">
         @for (visit of visits(); track visit.id) {
-          <div class="bg-papi-gray/50 border border-white/5 p-4 rounded-xl flex justify-between items-center hover:bg-papi-gray/70 transition-colors">
-            <div class="flex items-center gap-4">
-              <div class="p-2 bg-papi-gold/10 rounded-lg text-papi-gold">
-                <mat-icon class="text-[18px] w-auto h-auto">content_cut</mat-icon>
+          <div class="bg-papi-gray/50 border border-white/5 p-4 rounded-xl flex flex-col gap-3 hover:bg-papi-gray/70 transition-colors">
+            <div class="flex justify-between items-center">
+              <div class="flex items-center gap-4">
+                <div class="p-2 bg-papi-gold/10 rounded-lg text-papi-gold">
+                  <mat-icon class="text-[18px] w-auto h-auto">content_cut</mat-icon>
+                </div>
+                <div>
+                  <div class="text-sm font-medium">{{ visit.service }}</div>
+                  <div class="text-[10px] text-gray-500">{{ visit.date | date:'dd. MMMM yyyy' }} • Dominika</div>
+                </div>
               </div>
-              <div>
-                <div class="text-sm font-medium">{{ visit.service }}</div>
-                <div class="text-[10px] text-gray-500">{{ visit.date | date:'dd. MMMM yyyy' }} • Dominika</div>
+              <div class="flex items-center gap-4">
+                <div class="text-sm font-bold text-white">{{ visit.price | number:'1.2-2' }} €</div>
+                @if (editingVisitId() !== visit.id) {
+                  <button (click)="startEditVisit(visit)" class="text-gray-500 hover:text-papi-gold transition-colors">
+                    <mat-icon class="text-[16px] w-auto h-auto">edit</mat-icon>
+                  </button>
+                }
               </div>
             </div>
-            <div class="text-right text-sm font-bold text-white">{{ visit.price | number:'1.2-2' }} €</div>
+
+            @if (editingVisitId() === visit.id) {
+              <div class="mt-1 animate-in slide-in-from-top-2 duration-200">
+                <textarea 
+                  [(ngModel)]="currentEditVisitNote"
+                  class="w-full bg-papi-dark border border-white/10 rounded-lg p-3 text-xs text-white focus:border-papi-gold/50 outline-none transition-all"
+                  rows="2"
+                  placeholder="Zadajte poznámku k návšteve..."></textarea>
+                <div class="flex justify-end gap-2 mt-2">
+                  <button (click)="cancelEditVisit()" class="text-[10px] text-gray-500 uppercase font-bold px-2 py-1 hover:text-white">Zrušiť</button>
+                  <button (click)="saveVisit(visit)" class="text-[10px] text-emerald-500 uppercase font-bold bg-emerald-500/10 px-2 py-1 rounded hover:bg-emerald-500/20">Uložiť</button>
+                </div>
+              </div>
+            } @else if (visit.note) {
+              <div class="text-[11px] text-gray-400 bg-black/20 p-2 rounded-lg italic">
+                "{{ visit.note }}"
+              </div>
+            }
           </div>
         } @empty {
           <div class="text-center p-12 text-gray-600 italic text-sm">Zatiaľ žiadne návštevy</div>
@@ -84,7 +154,11 @@
     <div class="flex-1 flex flex-col overflow-hidden">
       <h4 class="text-xs font-bold text-gray-500 uppercase tracking-[0.2em] mb-4">Interné poznámky</h4>
       <div class="flex-1 bg-papi-gray border border-white/5 rounded-2xl p-4 text-xs text-gray-400 leading-relaxed italic overflow-y-auto custom-scrollbar">
-        "Preferuje studené tóny pri farbení. Má citlivú pokožku na zátylku, používať len bezsulfátové šampóny. Vždy pije espresso s cukrom."
+        @if (customer().notes) {
+          "{{ customer().notes }}"
+        } @else {
+          <span class="opacity-30 italic">Žiadne interné poznámky k tomuto zákazníkovi.</span>
+        }
       </div>
     </div>
   </div>
@@ -96,4 +170,5 @@
       REZERVÁCIA NOVÉHO TERMÍNU
     </button>
   </div>
+}
 </section>

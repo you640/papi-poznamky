@@ -12,15 +12,27 @@
       <input 
         [ngModel]="cs.searchQuery()" 
         (ngModelChange)="cs.searchQuery.set($event)"
-        class="w-full bg-papi-gray border border-white/5 rounded-full py-3 px-12 text-sm focus:outline-none focus:border-papi-gold/50 focus:ring-1 focus:ring-papi-gold/50 transition-all shadow-inner text-white placeholder:text-gray-600"
+        class="w-full bg-papi-gray border border-white/5 rounded-full py-3 pl-12 pr-12 text-sm focus:outline-none focus:border-papi-gold/50 focus:ring-1 focus:ring-papi-gold/50 transition-all shadow-inner text-white placeholder:text-gray-600"
         placeholder="Hľadať zákazníka...">
+      
+      @if (cs.searchQuery()) {
+        <button 
+          (click)="cs.searchQuery.set('')"
+          class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white transition-colors">
+          <mat-icon class="text-[16px] flex items-center justify-center">cancel</mat-icon>
+        </button>
+      }
     </div>
 
     <div class="flex-1 flex justify-end gap-4">
       <div class="hidden lg:flex items-center gap-2 px-3 py-1 bg-papi-gray rounded-md border border-white/5 text-[10px] text-gray-400">
         <span class="w-2 h-2 rounded-full bg-green-500"></span> OFFLINE SYNC OK
       </div>
-      <button class="bg-papi-gold hover:bg-papi-gold-light text-black font-bold px-5 py-2.5 rounded-lg transition-all text-xs uppercase tracking-wider font-display active:scale-95 flex items-center gap-2">
+      <button (click)="openExportModal()" class="bg-papi-gray hover:bg-papi-gray/70 text-white font-bold px-4 py-2.5 rounded-lg border border-white/10 transition-all text-xs uppercase tracking-wider font-display flex items-center gap-2">
+        <mat-icon class="text-[16px] w-auto h-auto text-papi-gold">download</mat-icon>
+        <span class="hidden sm:inline">EXPORT</span>
+      </button>
+      <button (click)="openNewCustomer()" class="bg-papi-gold hover:bg-papi-gold-light text-black font-bold px-5 py-2.5 rounded-lg transition-all text-xs uppercase tracking-wider font-display active:scale-95 flex items-center gap-2">
         <mat-icon class="text-[16px] w-auto h-auto">add</mat-icon>
         <span class="hidden sm:inline">+ NOVÝ KLIENT</span>
       </button>
@@ -34,10 +46,22 @@
     <aside class="w-full md:w-[350px] border-r gold-border flex flex-col bg-papi-dark shrink-0 custom-scrollbar overflow-y-auto">
       <!-- Quick Filters (Mock UI from Design) -->
       <div class="p-4 bg-papi-gray/30 flex gap-2 overflow-x-auto custom-scrollbar border-b border-white/5 shrink-0">
-        <button class="px-3 py-1 rounded-full border border-papi-gold text-papi-gold text-[10px] font-bold uppercase whitespace-nowrap">Všetci</button>
-        <button class="px-3 py-1 rounded-full border border-white/10 text-gray-500 text-[10px] font-bold uppercase whitespace-nowrap">VIP</button>
-        <button class="px-3 py-1 rounded-full border border-white/10 text-gray-500 text-[10px] font-bold uppercase whitespace-nowrap">Brada</button>
-        <button class="px-3 py-1 rounded-full border border-white/10 text-gray-500 text-[10px] font-bold uppercase whitespace-nowrap">Farbenie</button>
+        <button (click)="setFilter('')" 
+                [class.border-papi-gold]="!cs.searchQuery()" [class.text-papi-gold]="!cs.searchQuery()"
+                [class.border-white/10]="cs.searchQuery()" [class.text-gray-500]="cs.searchQuery()"
+                class="px-3 py-1 rounded-full border text-[10px] font-bold uppercase whitespace-nowrap transition-colors">Všetci</button>
+        <button (click)="setFilter('VIP')" 
+                [class.border-papi-gold]="cs.searchQuery() === 'VIP'" [class.text-papi-gold]="cs.searchQuery() === 'VIP'"
+                [class.border-white/10]="cs.searchQuery() !== 'VIP'" [class.text-gray-500]="cs.searchQuery() !== 'VIP'"
+                class="px-3 py-1 rounded-full border text-[10px] font-bold uppercase whitespace-nowrap transition-colors border-white/10">VIP</button>
+        <button (click)="setFilter('Brada')" 
+                [class.border-papi-gold]="cs.searchQuery() === 'Brada'" [class.text-papi-gold]="cs.searchQuery() === 'Brada'"
+                [class.border-white/10]="cs.searchQuery() !== 'Brada'" [class.text-gray-500]="cs.searchQuery() !== 'Brada'"
+                class="px-3 py-1 rounded-full border text-[10px] font-bold uppercase whitespace-nowrap transition-colors border-white/10">Brada</button>
+        <button (click)="setFilter('Farbenie')" 
+                [class.border-papi-gold]="cs.searchQuery() === 'Farbenie'" [class.text-papi-gold]="cs.searchQuery() === 'Farbenie'"
+                [class.border-white/10]="cs.searchQuery() !== 'Farbenie'" [class.text-gray-500]="cs.searchQuery() !== 'Farbenie'"
+                class="px-3 py-1 rounded-full border text-[10px] font-bold uppercase whitespace-nowrap transition-colors border-white/10">Farbenie</button>
       </div>
 
       <div class="flex-1 p-4 space-y-2">
@@ -53,6 +77,10 @@
           <div 
             #customerItem
             (click)="selectCustomer(customer)"
+            (pointerdown)="onPointerDown($event, customer)"
+            (pointerup)="onPointerUp()"
+            (pointercancel)="onPointerUp()"
+            (contextmenu)="onContextMenu($event)"
             (keydown.enter)="selectCustomer(customer)"
             tabindex="0"
             [class.border-papi-gold/30]="selectedCustomer()?.id === customer.id"
@@ -95,6 +123,9 @@
         [customer]="customer" 
         [visits]="selectedCustomerVisits()"
         (closed)="closeDetail()"
+        (save)="onSaveCustomer($event)"
+        (updateVisitNote)="onUpdateVisitNote($event)"
+        (book)="openBookVisit($event)"
         class="flex-1 flex flex-col overflow-hidden">
       </app-customer-detail>
     } @else {
@@ -105,4 +136,164 @@
       </section>
     }
   </main>
+
+  <!-- MODALS -->
+  @if (isAddingCustomer()) {
+    <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div class="bg-papi-dark border border-white/10 rounded-3xl w-full max-w-md p-6 shadow-2xl flex flex-col animate-in zoom-in-95 duration-300">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-xl font-bold font-display text-white">Nový Klient</h2>
+          <button (click)="closeNewCustomer()" class="text-gray-500 hover:text-white transition-colors">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        
+        <div class="flex flex-col gap-4">
+          <div class="flex gap-4">
+            <div class="flex-1">
+              <label for="newCustName" class="text-[10px] text-gray-500 uppercase font-bold ml-1">Meno *</label>
+              <input id="newCustName" [(ngModel)]="newCust.name" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-papi-gold/50" placeholder="Jozef" required>
+            </div>
+            <div class="flex-1">
+              <label for="newCustLastName" class="text-[10px] text-gray-500 uppercase font-bold ml-1">Priezvisko *</label>
+              <input id="newCustLastName" [(ngModel)]="newCust.lastName" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-papi-gold/50" placeholder="Mrkva" required>
+            </div>
+          </div>
+          <div>
+            <label for="newCustPhone" class="text-[10px] text-gray-500 uppercase font-bold ml-1">Telefón</label>
+            <input id="newCustPhone" [(ngModel)]="newCust.phone" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-papi-gold/50" placeholder="0911 222 333">
+          </div>
+          <div>
+            <label for="newCustTags" class="text-[10px] text-gray-500 uppercase font-bold ml-1">Značky (čiarkou oddelené)</label>
+            <input id="newCustTags" [(ngModel)]="newCust.tags" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-papi-gold/50" placeholder="VIP, Farbenie, Brada">
+          </div>
+          <button 
+             (click)="saveNewCustomer()" 
+             [disabled]="!newCust.name || !newCust.lastName"
+             class="mt-4 w-full bg-papi-gold disabled:opacity-50 text-black font-bold py-3 rounded-xl transition-all outline-none focus:ring-2 focus:ring-papi-gold">
+            PRIDAŤ KLIENTA
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (bookingCustomer(); as bCust) {
+    <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div class="bg-papi-dark border border-white/10 rounded-3xl w-full max-w-md p-6 shadow-2xl flex flex-col animate-in zoom-in-95 duration-300">
+        <div class="flex justify-between items-center mb-6">
+          <div>
+            <h2 class="text-xl font-bold font-display text-white">Nová rezervácia / Návšteva</h2>
+            <p class="text-xs text-papi-gold">{{ bCust.name }} {{ bCust.lastName }}</p>
+          </div>
+          <button (click)="closeBookVisit()" class="text-gray-500 hover:text-white transition-colors">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        
+        <div class="flex flex-col gap-4">
+          <div>
+            <label for="newVisitDate" class="text-[10px] text-gray-500 uppercase font-bold ml-1">Dátum *</label>
+            <input id="newVisitDate" type="date" [(ngModel)]="newVisit.date" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-papi-gold/50" required>
+          </div>
+          <div class="flex gap-4">
+            <div class="flex-[2]">
+              <label for="newVisitService" class="text-[10px] text-gray-500 uppercase font-bold ml-1">Služba *</label>
+              <input id="newVisitService" [(ngModel)]="newVisit.service" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-papi-gold/50" placeholder="Strih + Brada" required>
+            </div>
+            <div class="flex-1">
+              <label for="newVisitPrice" class="text-[10px] text-gray-500 uppercase font-bold ml-1">Cena (€)</label>
+              <input id="newVisitPrice" type="number" [(ngModel)]="newVisit.price" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-papi-gold/50" placeholder="25">
+            </div>
+          </div>
+          <div>
+            <label for="newVisitNote" class="text-[10px] text-gray-500 uppercase font-bold ml-1">Poznámka</label>
+            <textarea id="newVisitNote" [(ngModel)]="newVisit.note" rows="2" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-papi-gold/50" placeholder="Klasický strih..."></textarea>
+          </div>
+          <button 
+             (click)="saveNewVisit()"
+             [disabled]="!newVisit.service || !newVisit.date"
+             class="mt-4 w-full bg-papi-gold disabled:opacity-50 text-black font-bold py-3 rounded-xl transition-all outline-none focus:ring-2 focus:ring-papi-gold">
+            ULOŽIŤ NÁVŠTEVU
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (isExportModalOpen()) {
+    <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div class="bg-papi-dark border border-papi-gold/30 rounded-3xl w-full max-w-sm p-6 shadow-2xl flex flex-col animate-in zoom-in-95 duration-300">
+        <div class="flex justify-between items-center mb-6">
+          <div class="flex items-center gap-3">
+            <mat-icon class="text-papi-gold">download</mat-icon>
+            <h2 class="text-xl font-bold font-display text-white">Export CSV</h2>
+          </div>
+          <button (click)="closeExportModal()" class="text-gray-500 hover:text-white transition-colors">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        
+        <div class="flex flex-col gap-4">
+          <p class="text-xs text-gray-400 italic mb-2">Vyberte filtre, ak chcete obmedziť exportované dáta (Návštevy + Klienti). Pre export celej databázy nechajte polia prázdne.</p>
+          
+          <div class="flex gap-4">
+            <div class="flex-1">
+              <label for="expFrom" class="text-[10px] text-gray-500 uppercase font-bold ml-1">Dátum od</label>
+              <input id="expFrom" type="date" [(ngModel)]="exportFilters.dateFrom" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-2.5 text-white outline-none focus:border-papi-gold/50 text-sm">
+            </div>
+            <div class="flex-1">
+              <label for="expTo" class="text-[10px] text-gray-500 uppercase font-bold ml-1">Dátum do</label>
+              <input id="expTo" type="date" [(ngModel)]="exportFilters.dateTo" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-2.5 text-white outline-none focus:border-papi-gold/50 text-sm">
+            </div>
+          </div>
+          
+          <div>
+            <label for="expTag" class="text-[10px] text-gray-500 uppercase font-bold ml-1">Filter podľa Tagu</label>
+            <input id="expTag" [(ngModel)]="exportFilters.tag" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-2.5 text-white outline-none focus:border-papi-gold/50 text-sm" placeholder="Napr. VIP, Farbenie...">
+          </div>
+          
+          <button 
+             (click)="runExport()"
+             class="mt-4 w-full bg-white/5 border border-papi-gold/50 hover:bg-papi-gold hover:text-black hover:shadow-lg hover:shadow-papi-gold/20 text-papi-gold font-bold py-3 rounded-xl transition-all outline-none">
+            STIAHNUŤ SÚBOR
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- QUICK ACTION MENU (CONTEXT TOOLTIP) -->
+  @if (quickMenuData(); as customer) {
+    <div 
+       class="fixed inset-0 z-[110]" 
+       (click)="quickMenuData.set(null); isLongPressTriggered = false"
+       (keydown.escape)="quickMenuData.set(null); isLongPressTriggered = false"
+       tabindex="0"></div>
+    <div 
+      class="fixed z-[120] bg-papi-dark border border-papi-gold/30 rounded-2xl p-2 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col min-w-[240px] gold-glow"
+      [style.left.px]="menuPos.x"
+      [style.top.px]="menuPos.y">
+      
+      <div class="text-[10px] font-bold text-gray-500 mb-1 mt-1 uppercase tracking-widest px-3 border-b border-white/5 pb-2">
+        Rýchle akcie: <span class="text-papi-gold">{{ customer.name }} {{ customer.lastName }}</span>
+      </div>
+      
+      <button (click)="qmBook(customer)" class="w-full text-left px-3 py-3 text-sm text-white hover:bg-papi-gray rounded-xl transition-colors flex items-center gap-3">
+        <mat-icon class="text-[16px] text-emerald-500">autorenew</mat-icon> Zopakovať službu
+      </button>
+
+      <button (click)="qmCall(customer)" class="w-full text-left px-3 py-3 text-sm text-white hover:bg-papi-gray rounded-xl transition-colors flex items-center gap-3">
+        <mat-icon class="text-[16px] text-blue-500">phone</mat-icon> Volať ({{customer.phone || 'Nezadané'}})
+      </button>
+
+      <button (click)="qmMessage(customer)" class="w-full text-left px-3 py-3 text-sm text-white hover:bg-papi-gray rounded-xl transition-colors flex items-center gap-3">
+        <mat-icon class="text-[16px] text-purple-500">chat</mat-icon> SMS pripomienka
+      </button>
+
+      <button (click)="qmToggleVip(customer)" class="w-full text-left px-3 py-3 text-sm text-white hover:bg-papi-gray rounded-xl transition-colors flex items-center gap-3">
+        <mat-icon class="text-[16px] text-papi-gold">star</mat-icon> Prepnúť VIP status
+      </button>
+    </div>
+  }
 </div>
