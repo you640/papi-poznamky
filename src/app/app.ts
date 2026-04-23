@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { CustomerService } from './customer.service';
 import { CustomerDetailComponent } from './customer-detail';
+import { CalendarViewComponent } from './calendar-view';
 import type { Customer, Visit } from './db';
 import { animate, stagger } from 'motion';
 
@@ -11,7 +12,7 @@ import { animate, stagger } from 'motion';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-root',
-  imports: [CommonModule, FormsModule, MatIconModule, CustomerDetailComponent],
+  imports: [CommonModule, FormsModule, MatIconModule, CustomerDetailComponent, CalendarViewComponent],
   providers: [DatePipe],
   templateUrl: './app.html',
   styleUrl: './app.css',
@@ -19,6 +20,8 @@ import { animate, stagger } from 'motion';
 export class App {
   cs = inject(CustomerService);
   datePipe = inject(DatePipe);
+  
+  currentView = signal<'customers' | 'calendar'>('customers');
   
   selectedCustomer = signal<Customer | null>(null);
   selectedCustomerVisits = signal<Visit[]>([]);
@@ -32,12 +35,18 @@ export class App {
   quickMenuData = signal<Customer | null>(null);
   menuPos = { x: 0, y: 0 };
 
-  // Form states
+  // Forms & Modal states
   newCust = { name: '', lastName: '', phone: '', email: '', tags: '' };
   newVisit = { date: new Date().toISOString().split('T')[0], service: '', price: null as number | null, note: '' };
   exportFilters = { dateFrom: '', dateTo: '', tag: '' };
 
   customerItems = viewChildren<ElementRef>('customerItem');
+
+  // Expose isMobile detector property for templates
+  get isMobile(): boolean {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth < 768; // md breakpoint in tailwind
+  }
 
   constructor() {
     // Initial and subsequent animations

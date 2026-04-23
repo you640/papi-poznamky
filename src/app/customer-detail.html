@@ -1,25 +1,30 @@
-<section class="flex-1 bg-papi-gray/20 flex flex-col p-8 overflow-hidden relative">
+<section class="flex-1 bg-papi-gray/20 flex flex-col p-4 md:p-8 overflow-hidden relative">
   <!-- Detail Header -->
-  <div class="flex justify-between items-start mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
+  <div class="flex flex-col md:flex-row justify-between items-start mb-6 md:mb-8 animate-in fade-in slide-in-from-top-4 duration-500 gap-4 md:gap-0">
     @let c = customer();
-    <div class="flex items-center gap-6">
-      <div class="w-24 h-24 rounded-3xl bg-gradient-to-tr from-papi-gold to-papi-gold-light p-[2px]">
-        <div class="w-full h-full bg-papi-dark rounded-[22px] flex items-center justify-center text-papi-gold text-3xl font-bold font-display">
+    <div class="flex items-center gap-4 md:gap-6 w-full">
+      <!-- Back button for mobile -->
+      <button (click)="closed.emit()" class="md:hidden w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white hover:border-papi-gold/50 transition-all shrink-0">
+        <mat-icon class="text-[18px]">arrow_back</mat-icon>
+      </button>
+
+      <div class="w-16 h-16 md:w-24 md:h-24 rounded-2xl md:rounded-3xl bg-gradient-to-tr from-papi-gold to-papi-gold-light p-[2px] shrink-0">
+        <div class="w-full h-full bg-papi-dark rounded-[14px] md:rounded-[22px] flex items-center justify-center text-papi-gold text-2xl md:text-3xl font-bold font-display">
           {{ getInitials(c) }}
         </div>
       </div>
-      <div>
-        <div class="flex items-center gap-3 mb-1">
-          <h1 class="text-4xl font-bold text-white font-display">{{ c.name }} {{ c.lastName }}</h1>
-          <span class="px-2 py-0.5 bg-papi-gold/20 text-papi-gold text-[10px] font-bold rounded uppercase tracking-wider border border-papi-gold/30">VIP Zákazník</span>
+      <div class="flex-1 min-w-0">
+        <div class="flex flex-wrap items-center gap-2 md:gap-3 mb-1">
+          <h1 class="text-2xl md:text-4xl font-bold text-white font-display truncate">{{ c.name }} {{ c.lastName }}</h1>
+          <span class="px-2 py-0.5 bg-papi-gold/20 text-papi-gold text-[8px] md:text-[10px] font-bold rounded uppercase tracking-wider border border-papi-gold/30 shrink-0">VIP</span>
         </div>
-        <p class="text-gray-400 flex items-center gap-4 text-xs">
+        <p class="text-gray-400 flex flex-wrap items-center gap-2 md:gap-4 text-[10px] md:text-xs">
           <span class="flex items-center gap-1">
             <mat-icon class="text-[14px] w-auto h-auto">phone</mat-icon> {{ c.phone }}
           </span>
           @if (c.email) {
-            <span class="flex items-center gap-1">
-              <mat-icon class="text-[14px] w-auto h-auto">email</mat-icon> {{ c.email }}
+            <span class="flex items-center gap-1 truncate max-w-full">
+              <mat-icon class="text-[14px] w-auto h-auto shrink-0">email</mat-icon> <span class="truncate">{{ c.email }}</span>
             </span>
           } @else {
             <span class="flex items-center gap-1 opacity-40 italic">
@@ -29,16 +34,18 @@
         </p>
         
         <!-- Tags in Detail -->
-        <div class="flex gap-2 mt-3">
+        <div class="flex flex-wrap gap-2 mt-2 md:mt-3">
           @for (tag of c.tags; track tag) {
-            <span class="px-2 py-0.5 rounded-md bg-papi-gold/10 border border-papi-gold/20 text-[9px] text-papi-gold uppercase font-bold tracking-wider">
+            <span class="px-2 py-0.5 rounded-md bg-papi-gold/10 border border-papi-gold/20 text-[8px] md:text-[9px] text-papi-gold uppercase font-bold tracking-wider">
               #{{ tag }}
             </span>
           }
         </div>
       </div>
     </div>
-    <div class="flex gap-3">
+    
+    <!-- Desktop top right controls (mobile edits will move down or stay if wrapped properly, but let's align them) -->
+    <div class="flex gap-2 md:gap-3 absolute md:relative right-4 top-4 md:right-auto md:top-auto">
       @if (isEditing()) {
         <button (click)="saveChanges()" class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 px-4 py-2 rounded-xl text-xs font-bold hover:bg-emerald-500/20 transition-all flex items-center gap-2">
           <mat-icon class="text-[16px] w-auto h-auto">check</mat-icon> ULOŽIŤ
@@ -50,7 +57,7 @@
         <button (click)="toggleEdit()" class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white hover:border-papi-gold/50 transition-all">
           <mat-icon class="text-[18px]">edit</mat-icon>
         </button>
-        <button (click)="closed.emit()" class="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 hover:bg-red-500/20 transition-all">
+        <button (click)="closed.emit()" class="hidden md:flex w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 items-center justify-center text-red-500 hover:bg-red-500/20 transition-all">
           <mat-icon class="text-[18px]">close</mat-icon>
         </button>
       }
@@ -59,7 +66,7 @@
 
   @if (isEditing()) {
     <!-- EDITING FORM -->
-    <div class="grid grid-cols-1 gap-6 mb-8 animate-in fade-in zoom-in-95 duration-300">
+    <div class="grid grid-cols-1 gap-4 md:gap-6 mb-6 md:mb-8 animate-in fade-in zoom-in-95 duration-300">
       <div class="flex flex-col gap-2">
         <label for="phoneInput" class="text-[10px] text-gray-500 uppercase tracking-widest font-bold ml-1">Telefónne číslo</label>
         <div class="relative group">
@@ -67,7 +74,7 @@
           <input 
             id="phoneInput"
             [(ngModel)]="editPhone"
-            class="w-full bg-papi-gray/50 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-papi-gold/50 transition-all font-mono"
+            class="w-full bg-papi-gray/50 border border-white/10 rounded-2xl py-3 md:py-4 pl-12 pr-4 text-white focus:outline-none focus:border-papi-gold/50 transition-all font-mono"
             placeholder="Napr. 0912 345 678">
         </div>
       </div>
@@ -83,27 +90,27 @@
     </div>
   } @else {
     <!-- Quick Stats -->
-    <div class="grid grid-cols-3 gap-4 mb-8">
-    <div class="bg-papi-gray border border-white/5 p-4 rounded-2xl">
-      <div class="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Celkový obrat</div>
-      <div class="text-2xl font-bold text-papi-gold font-display">482,00 €</div>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4 mb-6 md:mb-8">
+    <div class="bg-papi-gray border border-white/5 p-3 md:p-4 rounded-2xl hidden md:block">
+      <div class="text-[9px] md:text-[10px] text-gray-500 uppercase tracking-widest mb-1">Celkový obrat</div>
+      <div class="text-xl md:text-2xl font-bold text-papi-gold font-display">482,00 €</div>
     </div>
-    <div class="bg-papi-gray border border-white/5 p-4 rounded-2xl">
-      <div class="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Počet návštev</div>
-      <div class="text-2xl font-bold text-white font-display">{{ visits().length }}</div>
+    <div class="bg-papi-gray border border-white/5 p-3 md:p-4 rounded-2xl">
+      <div class="text-[9px] md:text-[10px] text-gray-500 uppercase tracking-widest mb-1">Počet návštev</div>
+      <div class="text-xl md:text-2xl font-bold text-white font-display">{{ visits().length }}</div>
     </div>
-    <div class="bg-papi-gray border border-white/5 p-4 rounded-2xl">
-      <div class="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Obľúbená služba</div>
-      <div class="text-2xl font-bold text-white font-display">Strih + Fade</div>
+    <div class="bg-papi-gray border border-white/5 p-3 md:p-4 rounded-2xl">
+      <div class="text-[9px] md:text-[10px] text-gray-500 uppercase tracking-widest mb-1">Obľúbená služba</div>
+      <div class="text-xl md:text-2xl font-bold text-white font-display truncate">Strih + Fade</div>
     </div>
   </div>
 
   <!-- Content Area Split -->
-  <div class="flex-1 flex gap-6 overflow-hidden">
+  <div class="flex-1 flex flex-col md:flex-row gap-6 overflow-hidden">
     <!-- History -->
-    <div class="flex-[2] flex flex-col overflow-hidden">
-      <h4 class="text-xs font-bold text-gray-500 uppercase tracking-[0.2em] mb-4">História návštev</h4>
-      <div class="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-2">
+    <div class="flex-1 md:flex-[2] flex flex-col min-h-0">
+      <h4 class="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-[0.2em] mb-3 md:mb-4 shrink-0">História návštev</h4>
+      <div class="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-1 md:pr-2">
         @for (visit of visits(); track visit.id) {
           <div class="bg-papi-gray/50 border border-white/5 p-4 rounded-xl flex flex-col gap-3 hover:bg-papi-gray/70 transition-colors">
             <div class="flex justify-between items-center">
@@ -151,8 +158,8 @@
     </div>
 
     <!-- Notes -->
-    <div class="flex-1 flex flex-col overflow-hidden">
-      <h4 class="text-xs font-bold text-gray-500 uppercase tracking-[0.2em] mb-4">Interné poznámky</h4>
+    <div class="flex-none h-32 md:h-auto md:flex-1 flex flex-col shrink-0">
+      <h4 class="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-[0.2em] mb-3 md:mb-4 shrink-0 mt-4 md:mt-0">Interné poznámky</h4>
       <div class="flex-1 bg-papi-gray border border-white/5 rounded-2xl p-4 text-xs text-gray-400 leading-relaxed italic overflow-y-auto custom-scrollbar">
         @if (customer().notes) {
           "{{ customer().notes }}"
@@ -164,8 +171,8 @@
   </div>
 
   <!-- Action Button -->
-  <div class="mt-8 shrink-0">
-    <button (click)="book.emit(customer())" class="w-full bg-papi-gold hover:bg-papi-gold-light text-black font-bold py-4 rounded-2xl transition-all shadow-xl shadow-papi-gold/10 flex items-center justify-center gap-3 active:scale-[0.98]">
+  <div class="mt-4 md:mt-8 shrink-0 pb-safe">
+    <button (click)="book.emit(customer())" class="w-full bg-papi-gold hover:bg-papi-gold-light text-black font-bold py-3 md:py-4 rounded-2xl transition-all shadow-xl shadow-papi-gold/10 flex items-center justify-center gap-3 active:scale-[0.98] text-sm md:text-base">
       <mat-icon>calendar_today</mat-icon>
       REZERVÁCIA NOVÉHO TERMÍNU
     </button>

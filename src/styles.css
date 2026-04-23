@@ -49,3 +49,9 @@ aside {
 header, aside, section {
   border-color: rgba(196, 164, 124, 0.2) !important;
 }
+
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+  }
+}

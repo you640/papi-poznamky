@@ -58,6 +58,17 @@ export class CustomerService {
     return await db.visits.where('customerId').equals(customerId).reverse().sortBy('date');
   }
 
+  async getAllVisitsWithCustomers() {
+    const visits = await db.visits.orderBy('date').reverse().toArray();
+    const customers = await db.customers.toArray();
+    const customerMap = new Map(customers.map(c => [c.id, c]));
+    
+    return visits.map(v => ({
+      ...v,
+      customer: customerMap.get(v.customerId)!
+    }));
+  }
+
   async addVisit(visit: Omit<Visit, 'id'>) {
     const visitId = await db.visits.add(visit as Visit);
     // Update last visit date on customer

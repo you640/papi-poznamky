@@ -1,50 +1,77 @@
 <div class="flex flex-col h-screen bg-papi-dark text-[#e0e0e0] font-sans antialiased overflow-hidden">
   
   <!-- HEADER -->
-  <header class="h-20 bg-papi-dark/95 backdrop-blur-md border-b gold-border flex items-center justify-between px-8 shrink-0 z-50">
-    <div class="flex-1 font-display font-bold tracking-tighter text-papi-gold uppercase text-2xl gold-glow">
-      Papi CRM
+  <header class="h-16 md:h-20 bg-papi-dark/95 backdrop-blur-md border-b gold-border flex items-center gap-2 md:gap-4 px-3 md:px-8 shrink-0 z-50 transition-all w-full overflow-hidden">
+    <div class="font-display font-black tracking-tighter text-papi-gold uppercase text-[15px] md:text-2xl gold-glow shrink-0 mr-1 md:mr-2">
+      PAPI CRM
     </div>
+
+    <!-- View Toggle -->
+    <div class="flex bg-papi-gray border border-white/5 p-1 rounded-lg shrink-0 mr-2 -ml-1">
+      <button 
+        (click)="currentView.set('customers')"
+        [class.bg-papi-dark]="currentView() === 'customers'"
+        [class.text-papi-gold]="currentView() === 'customers'"
+        [class.text-gray-400]="currentView() !== 'customers'"
+        class="px-2 py-1.5 md:px-3 text-[10px] md:text-[11px] font-bold font-display uppercase tracking-wider rounded-md transition-all flex items-center justify-center">
+        <mat-icon class="text-[16px] md:mr-1">people</mat-icon>
+        <span class="hidden md:inline">Klienti</span>
+      </button>
+      <button 
+        (click)="currentView.set('calendar')"
+        [class.bg-papi-dark]="currentView() === 'calendar'"
+        [class.text-papi-gold]="currentView() === 'calendar'"
+        [class.text-gray-400]="currentView() !== 'calendar'"
+        class="px-2 py-1.5 md:px-3 text-[10px] md:text-[11px] font-bold font-display uppercase tracking-wider rounded-md transition-all flex items-center justify-center">
+        <mat-icon class="text-[16px] md:mr-1">event</mat-icon>
+        <span class="hidden md:inline">Kalendár</span>
+      </button>
+    </div>
+
+    <!-- ACTION BUTTONS -->
+    <button (click)="openExportModal()" class="shrink-0 bg-papi-gray hover:bg-papi-gray/70 text-white font-bold w-9 h-9 md:w-auto md:h-auto md:px-4 md:py-2.5 rounded-lg border border-white/10 transition-all text-xs uppercase tracking-wider font-display flex items-center justify-center">
+      <mat-icon class="text-[18px] md:text-[16px] w-auto h-auto text-papi-gold">download</mat-icon>
+      <span class="hidden md:inline ml-2">EXPORT</span>
+    </button>
+    
+    <button (click)="openNewCustomer()" class="shrink-0 bg-papi-gold hover:bg-papi-gold-light text-black font-bold w-9 h-9 md:w-auto md:h-auto md:px-5 md:py-2.5 rounded-lg transition-all text-xs uppercase tracking-wider font-display active:scale-95 flex items-center justify-center">
+      <mat-icon class="text-[20px] md:text-[16px] w-auto h-auto">add</mat-icon>
+      <span class="hidden md:inline ml-2">NOVÝ KLIENT</span>
+    </button>
     
     <!-- STREDOVÝ SEARCH -->
-    <div class="flex-1 max-w-md relative group">
-      <mat-icon class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-papi-gold transition-colors text-[16px] flex items-center justify-center">search</mat-icon>
+    <div class="flex-1 min-w-0 max-w-md relative group md:ml-auto">
+      <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-papi-gold transition-colors text-[18px] flex items-center justify-center">search</mat-icon>
       <input 
         [ngModel]="cs.searchQuery()" 
         (ngModelChange)="cs.searchQuery.set($event)"
-        class="w-full bg-papi-gray border border-white/5 rounded-full py-3 pl-12 pr-12 text-sm focus:outline-none focus:border-papi-gold/50 focus:ring-1 focus:ring-papi-gold/50 transition-all shadow-inner text-white placeholder:text-gray-600"
+        class="w-full bg-papi-gray/50 border border-white/5 rounded-full py-2.5 pl-9 md:pl-10 pr-8 text-[12px] md:text-sm focus:outline-none focus:border-papi-gold/50 focus:ring-1 focus:ring-papi-gold/50 transition-all shadow-inner text-white placeholder:text-gray-600 truncate"
         placeholder="Hľadať zákazníka...">
       
       @if (cs.searchQuery()) {
         <button 
           (click)="cs.searchQuery.set('')"
-          class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white transition-colors">
+          class="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white transition-colors">
           <mat-icon class="text-[16px] flex items-center justify-center">cancel</mat-icon>
         </button>
       }
     </div>
 
-    <div class="flex-1 flex justify-end gap-4">
-      <div class="hidden lg:flex items-center gap-2 px-3 py-1 bg-papi-gray rounded-md border border-white/5 text-[10px] text-gray-400">
-        <span class="w-2 h-2 rounded-full bg-green-500"></span> OFFLINE SYNC OK
-      </div>
-      <button (click)="openExportModal()" class="bg-papi-gray hover:bg-papi-gray/70 text-white font-bold px-4 py-2.5 rounded-lg border border-white/10 transition-all text-xs uppercase tracking-wider font-display flex items-center gap-2">
-        <mat-icon class="text-[16px] w-auto h-auto text-papi-gold">download</mat-icon>
-        <span class="hidden sm:inline">EXPORT</span>
-      </button>
-      <button (click)="openNewCustomer()" class="bg-papi-gold hover:bg-papi-gold-light text-black font-bold px-5 py-2.5 rounded-lg transition-all text-xs uppercase tracking-wider font-display active:scale-95 flex items-center gap-2">
-        <mat-icon class="text-[16px] w-auto h-auto">add</mat-icon>
-        <span class="hidden sm:inline">+ NOVÝ KLIENT</span>
-      </button>
+    <!-- SYNC BADGE -->
+    <div class="hidden lg:flex shrink-0 items-center gap-2 px-3 h-10 bg-papi-gray rounded-lg border border-white/5 text-[10px] text-gray-400 ml-2">
+      <span class="w-2 h-2 rounded-full bg-green-500"></span> OFFLINE SYNC OK
     </div>
   </header>
 
   <!-- MAIN CONTENT SPLIT -->
-  <main class="flex flex-1 overflow-hidden">
+  <main class="flex flex-1 overflow-hidden relative">
     
-    <!-- ASIDE (Customer List) -->
-    <aside class="w-full md:w-[350px] border-r gold-border flex flex-col bg-papi-dark shrink-0 custom-scrollbar overflow-y-auto">
-      <!-- Quick Filters (Mock UI from Design) -->
+    @if (currentView() === 'customers') {
+      <!-- ASIDE (Customer List) -->
+      <aside 
+        [ngClass]="selectedCustomer() ? 'hidden md:flex' : 'flex'"
+        class="w-full md:w-[350px] border-r gold-border flex-col bg-papi-dark shrink-0 custom-scrollbar overflow-y-auto absolute md:relative inset-0 z-10 md:z-auto">
+        <!-- Quick Filters (Mock UI from Design) -->
       <div class="p-4 bg-papi-gray/30 flex gap-2 overflow-x-auto custom-scrollbar border-b border-white/5 shrink-0">
         <button (click)="setFilter('')" 
                 [class.border-papi-gold]="!cs.searchQuery()" [class.text-papi-gold]="!cs.searchQuery()"
@@ -120,31 +147,38 @@
     <!-- SECTION (Customer Detail) -->
     @if (selectedCustomer(); as customer) {
       <app-customer-detail 
+        [ngClass]="!selectedCustomer() ? 'hidden md:flex' : 'flex'"
         [customer]="customer" 
         [visits]="selectedCustomerVisits()"
         (closed)="closeDetail()"
         (save)="onSaveCustomer($event)"
         (updateVisitNote)="onUpdateVisitNote($event)"
         (book)="openBookVisit($event)"
-        class="flex-1 flex flex-col overflow-hidden">
+        class="flex-1 flex-col overflow-hidden absolute md:relative inset-0 z-20 md:z-auto bg-papi-dark md:bg-transparent">
       </app-customer-detail>
     } @else {
       <!-- Empty State -->
-      <section class="flex-1 bg-papi-gray/20 flex flex-col p-8 items-center justify-center text-gray-700 select-none">
+      <section class="hidden md:flex flex-1 bg-papi-gray/20 flex-col p-8 items-center justify-center text-gray-700 select-none">
         <mat-icon class="text-8xl w-auto h-auto mb-4 opacity-10">content_cut</mat-icon>
-        <p class="font-display uppercase tracking-[0.3em] text-sm font-bold opacity-30">Vyberte zákazníka pre zobrazenie detailov</p>
+        <p class="font-display uppercase tracking-[0.3em] text-sm font-bold opacity-30 text-center">Vyberte zákazníka<br><span class="text-[10px] normal-case tracking-normal">pre zobrazenie detailov</span></p>
       </section>
+      }
+    } @else {
+      <!-- CALENDAR VIEW -->
+      <app-calendar-view class="flex-1 flex flex-col overflow-hidden w-full h-full"></app-calendar-view>
     }
   </main>
 
   <!-- MODALS -->
   @if (isAddingCustomer()) {
-    <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div class="bg-papi-dark border border-white/10 rounded-3xl w-full max-w-md p-6 shadow-2xl flex flex-col animate-in zoom-in-95 duration-300">
+    <div class="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm md:p-4 animate-in fade-in duration-200">
+      <div class="bg-papi-dark border-t border-white/10 md:border md:rounded-3xl rounded-t-3xl rounded-b-none w-full max-w-md p-6 shadow-2xl flex flex-col animate-in slide-in-from-bottom-full md:zoom-in-95 duration-300 pb-[calc(1.5rem+env(safe-area-inset-bottom))] max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <!-- Handle for mobile -->
+        <div class="w-12 h-1.5 bg-white/20 rounded-full mx-auto md:hidden mb-6 mt-[-8px]"></div>
         <div class="flex justify-between items-center mb-6">
           <h2 class="text-xl font-bold font-display text-white">Nový Klient</h2>
-          <button (click)="closeNewCustomer()" class="text-gray-500 hover:text-white transition-colors">
-            <mat-icon>close</mat-icon>
+          <button (click)="closeNewCustomer()" class="text-gray-500 hover:text-white transition-colors bg-white/5 rounded-full p-1 border border-white/10">
+            <mat-icon class="text-[20px] flex items-center justify-center">close</mat-icon>
           </button>
         </div>
         
@@ -179,15 +213,17 @@
   }
 
   @if (bookingCustomer(); as bCust) {
-    <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div class="bg-papi-dark border border-white/10 rounded-3xl w-full max-w-md p-6 shadow-2xl flex flex-col animate-in zoom-in-95 duration-300">
+    <div class="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm md:p-4 animate-in fade-in duration-200">
+      <div class="bg-papi-dark border-t border-white/10 md:border md:rounded-3xl rounded-t-3xl rounded-b-none w-full max-w-md p-6 shadow-2xl flex flex-col animate-in slide-in-from-bottom-full md:zoom-in-95 duration-300 pb-[calc(1.5rem+env(safe-area-inset-bottom))] max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <!-- Handle for mobile -->
+        <div class="w-12 h-1.5 bg-white/20 rounded-full mx-auto md:hidden mb-6 mt-[-8px]"></div>
         <div class="flex justify-between items-center mb-6">
           <div>
             <h2 class="text-xl font-bold font-display text-white">Nová rezervácia / Návšteva</h2>
             <p class="text-xs text-papi-gold">{{ bCust.name }} {{ bCust.lastName }}</p>
           </div>
-          <button (click)="closeBookVisit()" class="text-gray-500 hover:text-white transition-colors">
-            <mat-icon>close</mat-icon>
+          <button (click)="closeBookVisit()" class="text-gray-500 hover:text-white transition-colors bg-white/5 rounded-full p-1 border border-white/10">
+            <mat-icon class="text-[20px] flex items-center justify-center">close</mat-icon>
           </button>
         </div>
         
@@ -222,15 +258,17 @@
   }
 
   @if (isExportModalOpen()) {
-    <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div class="bg-papi-dark border border-papi-gold/30 rounded-3xl w-full max-w-sm p-6 shadow-2xl flex flex-col animate-in zoom-in-95 duration-300">
+    <div class="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm md:p-4 animate-in fade-in duration-200">
+      <div class="bg-papi-dark border-t border-papi-gold/30 md:border md:rounded-3xl rounded-t-3xl rounded-b-none w-full max-w-sm p-6 shadow-2xl flex flex-col animate-in slide-in-from-bottom-full md:zoom-in-95 duration-300 pb-[calc(1.5rem+env(safe-area-inset-bottom))] max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <!-- Handle for mobile -->
+        <div class="w-12 h-1.5 bg-papi-gold/20 rounded-full mx-auto md:hidden mb-6 mt-[-8px]"></div>
         <div class="flex justify-between items-center mb-6">
           <div class="flex items-center gap-3">
             <mat-icon class="text-papi-gold">download</mat-icon>
             <h2 class="text-xl font-bold font-display text-white">Export CSV</h2>
           </div>
-          <button (click)="closeExportModal()" class="text-gray-500 hover:text-white transition-colors">
-            <mat-icon>close</mat-icon>
+          <button (click)="closeExportModal()" class="text-gray-500 hover:text-white transition-colors bg-white/5 rounded-full p-1 border border-white/10">
+            <mat-icon class="text-[20px] flex items-center justify-center">close</mat-icon>
           </button>
         </div>
         
@@ -266,14 +304,16 @@
   <!-- QUICK ACTION MENU (CONTEXT TOOLTIP) -->
   @if (quickMenuData(); as customer) {
     <div 
-       class="fixed inset-0 z-[110]" 
+       class="fixed inset-0 z-[110] bg-black/40 backdrop-blur-sm" 
        (click)="quickMenuData.set(null); isLongPressTriggered = false"
        (keydown.escape)="quickMenuData.set(null); isLongPressTriggered = false"
        tabindex="0"></div>
     <div 
-      class="fixed z-[120] bg-papi-dark border border-papi-gold/30 rounded-2xl p-2 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col min-w-[240px] gold-glow"
-      [style.left.px]="menuPos.x"
-      [style.top.px]="menuPos.y">
+      class="fixed z-[120] bg-papi-dark border border-papi-gold/30 md:rounded-2xl rounded-t-2xl p-2 shadow-2xl animate-in fade-in slide-in-from-bottom-4 md:zoom-in-95 duration-200 flex flex-col w-full md:min-w-[240px] md:w-auto pb-[env(safe-area-inset-bottom)] bottom-0 md:bottom-auto gold-glow"
+      [style.left]="isMobile ? '0' : menuPos.x + 'px'"
+      [style.top]="isMobile ? 'auto' : menuPos.y + 'px'">
+      <!-- Mobile handle -->
+      <div class="w-10 h-1 bg-white/20 rounded-full mx-auto md:hidden mb-2 mt-2"></div>
       
       <div class="text-[10px] font-bold text-gray-500 mb-1 mt-1 uppercase tracking-widest px-3 border-b border-white/5 pb-2">
         Rýchle akcie: <span class="text-papi-gold">{{ customer.name }} {{ customer.lastName }}</span>
