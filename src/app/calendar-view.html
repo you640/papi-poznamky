@@ -29,8 +29,8 @@
           <input 
             [ngModel]="cs.searchQuery()" 
             (ngModelChange)="cs.searchQuery.set($event)"
-            class="w-full luxury-input pl-10 pr-4 hover:bg-white/5 transition-all h-[42px] text-sm"
-            placeholder="Meno, tel, služba...">
+            class="w-full luxury-input pl-10 pr-4 hover:bg-white/5 transition-all h-[42px] text-sm select-text"
+            placeholder="">
         </div>
       </div>
     </div>
@@ -50,9 +50,9 @@
             <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-papi-gold to-papi-gold-light flex items-center justify-center font-bold text-black shrink-0 font-display">
               {{ getInitials(visit.customer) }}
             </div>
-            <div class="flex-1 min-w-0">
+            <div class="flex-1 min-w-0 select-text">
               <h3 class="text-white font-bold text-lg truncate">{{ visit.customer.name }} {{ visit.customer.lastName }}</h3>
-              <div class="text-gray-400 text-xs flex flex-wrap items-center gap-3 mt-1">
+              <div class="text-gray-400 text-xs flex flex-wrap items-center gap-3 mt-1 select-text">
                 <span class="flex items-center gap-1 shrink-0"><mat-icon class="text-[14px]">event</mat-icon> {{ visit.date | date:'dd.MM.yyyy HH:mm' }}</span>
                 <span class="flex items-center gap-1 text-papi-gold shrink-0"><mat-icon class="text-[14px]">content_cut</mat-icon> {{ visit.service }}</span>
               </div>

@@ -1,10 +1,14 @@
-<div class="flex flex-col h-screen bg-papi-dark text-[#e0e0e0] font-sans antialiased overflow-hidden">
+<div class="flex flex-col h-screen bg-papi-dark text-[#e0e0e0] font-sans antialiased overflow-hidden select-none">
   
   <!-- HEADER -->
   <header class="h-16 md:h-20 flex items-center gap-2 md:gap-4 px-3 md:px-8 shrink-0 z-50 transition-all w-full overflow-hidden">
-    <div class="font-apple tracking-tight text-papi-gold text-[16px] md:text-[22px] gold-glow shrink-0 mr-1 md:mr-4 flex items-center">
-      <span class="opacity-90 font-medium mr-1.5">Papi</span>
-      <span class="tracking-[0.05em] uppercase font-black">CRM</span>
+    <!-- Logo Image -->
+    <div class="shrink-0 mr-2 md:mr-6 flex items-center">
+      <img 
+        src="https://www.papihairdesign.sk/assets/logo-header.webp" 
+        alt="Papi Hair Design" 
+        class="h-7 md:h-11 w-auto object-contain invert brightness-150 contrast-125 opacity-90 transition-all hover:opacity-100" 
+        referrerpolicy="no-referrer" />
     </div>
 
     <!-- View Toggle - Luxury Segmented Control -->
@@ -26,13 +30,13 @@
     </div>
 
     <!-- STREDOVÝ SEARCH -->
-    <div class="hidden md:flex flex-1 min-w-0 max-w-sm relative group mx-auto">
+    <div class="hidden md:flex flex-1 min-w-0 max-w-sm relative group mx-auto select-none">
       <mat-icon class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-papi-gold transition-colors text-[18px] flex items-center justify-center pointer-events-none">search</mat-icon>
       <input 
         [ngModel]="cs.searchQuery()" 
         (ngModelChange)="cs.searchQuery.set($event)"
-        class="w-full luxury-input pl-10 pr-10 truncate placeholder:text-white/30"
-        placeholder="Hľadať klienta...">
+        class="w-full luxury-input pl-10 pr-10 truncate placeholder:text-white/10 select-text"
+        placeholder="">
       
       @if (cs.searchQuery()) {
         <button 
@@ -45,6 +49,10 @@
 
     <!-- ACTION BUTTONS -->
     <div class="flex items-center gap-2 ml-auto md:ml-4">
+      <button (click)="openWipeModal()" class="circle-btn border-red-500/10 text-red-500 hover:bg-red-500/10 hover:border-red-500/40" title="Vymazať celú databázu">
+        <mat-icon class="text-[18px]">delete_sweep</mat-icon>
+      </button>
+
       <button (click)="openExportModal()" class="circle-btn" title="Exportovať CSV">
         <mat-icon class="text-[18px]">file_download</mat-icon>
       </button>
@@ -67,13 +75,13 @@
       <div class="px-4 py-3 bg-transparent flex flex-col gap-4 border-b border-white/5 shrink-0">
         
         <!-- Search for mobile integrated into aside when view is customers -->
-        <div class="md:hidden relative group w-full">
+        <div class="md:hidden relative group w-full select-none">
            <mat-icon class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-papi-gold transition-colors text-[18px] flex items-center justify-center pointer-events-none">search</mat-icon>
            <input 
              [ngModel]="cs.searchQuery()" 
              (ngModelChange)="cs.searchQuery.set($event)"
-             class="w-full luxury-input pl-10 pr-10 truncate placeholder:text-white/30 text-sm py-2"
-             placeholder="Hľadať klienta...">
+             class="w-full luxury-input pl-10 pr-10 truncate placeholder:text-white/10 text-sm py-2 select-text"
+             placeholder="">
         </div>
 
         <div class="flex gap-2 overflow-x-auto custom-scrollbar no-scrollbar">
@@ -135,7 +143,7 @@
                    class="w-11 h-11 rounded-full flex items-center justify-center font-light text-sm border bg-black shrink-0 font-display transition-colors">
                 {{ getInitials(customer) }}
               </div>
-              <div class="flex flex-col">
+              <div class="flex flex-col select-text select-all">
                 <h3 [class.text-papi-gold]="selectedCustomer()?.id === customer.id"
                     [class.text-white/90]="selectedCustomer()?.id !== customer.id"
                     class="text-[15px] font-medium tracking-tight mb-0.5 transition-colors leading-none">{{ customer.name }} {{ customer.lastName }}</h3>
@@ -146,6 +154,53 @@
               <div class="text-right relative z-10 shrink-0">
                 <div class="text-[9px] text-[#D8B589] opacity-70 uppercase tracking-[0.1em] font-medium mb-1">Posledná</div>
                 <div class="text-[11px] text-white/50">{{ customer.lastVisit | date:'dd.MM.yy' }}</div>
+              </div>
+            }
+          </div>
+        } @empty {
+          <!-- Beautiful empty state! -->
+          <div class="flex flex-col items-center justify-center text-center p-6 md:p-8 rounded-[24px] border border-white/5 bg-white/[0.01] overflow-hidden min-h-[350px] relative select-none animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <!-- Subtle backdrop bloom -->
+            <div class="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-48 bg-papi-gold/5 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <!-- Luxury Frame/Icon -->
+            <div class="w-16 h-16 rounded-2xl bg-papi-gold/5 border border-papi-gold/10 flex items-center justify-center text-papi-gold mb-5 shadow-inner">
+              <mat-icon class="text-[32px] w-[32px] h-[32px] flex items-center justify-center">person_search</mat-icon>
+            </div>
+
+            @if (cs.customersList().length === 0) {
+              <!-- Case 1: Database actually empty -->
+              <h3 class="text-white text-[16px] font-semibold tracking-wide font-display mb-2">Salón zatiaľ nemá klientov</h3>
+              <p class="text-white/40 text-[12px] leading-relaxed font-light mb-6 max-w-xs">
+                Začnite pridaním prvého VIP hosťa do svojej kartotéky na bezpečné uchovanie poznámok.
+              </p>
+              
+              <button 
+                (click)="openNewCustomer()"
+                class="bg-gradient-to-r from-[#D8B589] to-[#EFDBC2] hover:opacity-90 active:scale-[0.98] text-black text-xs font-semibold uppercase tracking-wider px-5 py-3.5 rounded-xl transition-all shadow-[0_4px_15px_rgba(216,181,137,0.15)] flex items-center gap-2">
+                <mat-icon class="text-[16px] w-[16px] h-[16px] flex items-center justify-center font-bold">add</mat-icon>
+                <span>Pridať prvého klienta</span>
+              </button>
+            } @else {
+              <!-- Case 2: Searched / Filtered list empty -->
+              <h3 class="text-white text-[16px] font-semibold tracking-wide font-display mb-2">Nenašli sa žiadne zhody</h3>
+              <p class="text-white/40 text-[12px] leading-relaxed font-light mb-6 max-w-xs">
+                Vyhľadávaniu a filtrom <span class="text-papi-gold">"{{ cs.searchQuery() }}"</span> nezodpovedá žiaden klient. Skontrolujte preklepy alebo vymažte vyhľadávanie.
+              </p>
+              
+              <div class="flex flex-col gap-2 w-full">
+                <button 
+                  (click)="cs.searchQuery.set('')"
+                  class="bg-white/5 hover:bg-white/10 active:scale-[0.98] text-[#e0e0e0] border border-white/5 text-xs font-semibold uppercase tracking-wider py-3 rounded-xl transition-all flex items-center justify-center gap-2">
+                  <mat-icon class="text-[16px] w-[16px] h-[16px] flex items-center justify-center">clear</mat-icon>
+                  <span>Zrušiť filter</span>
+                </button>
+                <button 
+                  (click)="openNewCustomer()"
+                  class="bg-gradient-to-r from-[#D8B589] to-[#EFDBC2] hover:opacity-90 active:scale-[0.98] text-black text-xs font-semibold uppercase tracking-wider py-3 rounded-xl transition-all shadow-[0_4px_15px_rgba(216,181,137,0.15)] flex items-center justify-center gap-2">
+                  <mat-icon class="text-[16px] w-[16px] h-[16px] flex items-center justify-center font-bold">add</mat-icon>
+                  <span>Registrovať nového</span>
+                </button>
               </div>
             }
           </div>
@@ -200,20 +255,20 @@
           <div class="flex gap-4">
             <div class="flex-1">
               <label for="newCustName" class="text-[10px] text-gray-500 uppercase font-bold ml-1">Meno *</label>
-              <input id="newCustName" [(ngModel)]="newCust.name" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-papi-gold/50" placeholder="Jozef" required>
+              <input id="newCustName" [(ngModel)]="newCust.name" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-papi-gold/50 select-text" placeholder="" required>
             </div>
             <div class="flex-1">
               <label for="newCustLastName" class="text-[10px] text-gray-500 uppercase font-bold ml-1">Priezvisko *</label>
-              <input id="newCustLastName" [(ngModel)]="newCust.lastName" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-papi-gold/50" placeholder="Mrkva" required>
+              <input id="newCustLastName" [(ngModel)]="newCust.lastName" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-papi-gold/50 select-text" placeholder="" required>
             </div>
           </div>
           <div>
             <label for="newCustPhone" class="text-[10px] text-gray-500 uppercase font-bold ml-1">Telefón</label>
-            <input id="newCustPhone" [(ngModel)]="newCust.phone" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-papi-gold/50" placeholder="0911 222 333">
+            <input id="newCustPhone" [(ngModel)]="newCust.phone" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-papi-gold/50 select-text" placeholder="">
           </div>
           <div>
             <label for="newCustTags" class="text-[10px] text-gray-500 uppercase font-bold ml-1">Značky (čiarkou oddelené)</label>
-            <input id="newCustTags" [(ngModel)]="newCust.tags" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-papi-gold/50" placeholder="VIP, Farbenie, Brada">
+            <input id="newCustTags" [(ngModel)]="newCust.tags" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-papi-gold/50 select-text" placeholder="">
           </div>
           <button 
              (click)="saveNewCustomer()" 
@@ -249,16 +304,16 @@
           <div class="flex gap-4">
             <div class="flex-[2]">
               <label for="newVisitService" class="text-[10px] text-gray-500 uppercase font-bold ml-1">Služba *</label>
-              <input id="newVisitService" [(ngModel)]="newVisit.service" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-papi-gold/50" placeholder="Strih + Brada" required>
+              <input id="newVisitService" [(ngModel)]="newVisit.service" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-papi-gold/50 select-text" placeholder="" required>
             </div>
             <div class="flex-1">
               <label for="newVisitPrice" class="text-[10px] text-gray-500 uppercase font-bold ml-1">Cena (€)</label>
-              <input id="newVisitPrice" type="number" [(ngModel)]="newVisit.price" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-papi-gold/50" placeholder="25">
+              <input id="newVisitPrice" type="number" [(ngModel)]="newVisit.price" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-papi-gold/50 select-text" placeholder="">
             </div>
           </div>
           <div>
             <label for="newVisitNote" class="text-[10px] text-gray-500 uppercase font-bold ml-1">Poznámka</label>
-            <textarea id="newVisitNote" [(ngModel)]="newVisit.note" rows="2" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-papi-gold/50" placeholder="Klasický strih..."></textarea>
+            <textarea id="newVisitNote" [(ngModel)]="newVisit.note" rows="2" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-papi-gold/50 select-text" placeholder=""></textarea>
           </div>
           <button 
              (click)="saveNewVisit()"
@@ -291,7 +346,7 @@
           
           <div>
             <label for="expTag" class="text-[10px] text-gray-500 uppercase font-bold ml-1">Filter podľa Tagu</label>
-            <input id="expTag" [(ngModel)]="exportFilters.tag" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-2.5 text-white outline-none focus:border-papi-gold/50 text-sm" placeholder="Napr. VIP, Farbenie...">
+            <input id="expTag" [(ngModel)]="exportFilters.tag" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-2.5 text-white outline-none focus:border-papi-gold/50 text-sm select-text" placeholder="">
           </div>
           
           <button 
@@ -388,6 +443,43 @@
             (click)="dismissPersistence()" 
             class="w-full bg-white/5 hover:bg-white/10 border border-white/5 text-gray-400 font-medium py-3 rounded-xl transition-all text-xs tracking-wider uppercase">
             Neskôr
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- WIPE DATABASE CONFIRMATION MODAL -->
+  @if (isWipeModalOpen()) {
+    <div class="fixed inset-0 z-[160] flex items-end md:items-center justify-center bg-black/80 backdrop-blur-md md:p-4 animate-in fade-in duration-200">
+      <div class="bg-[#0e0e0f] border-t md:border border-red-500/20 md:rounded-3xl rounded-t-3xl rounded-b-none w-full max-w-sm p-6 shadow-2xl flex flex-col animate-in slide-in-from-bottom-full md:zoom-in-95 duration-300 pb-[calc(1.5rem+env(safe-area-inset-bottom))] max-h-[90vh] overflow-y-auto custom-scrollbar text-center relative overflow-hidden">
+        
+        <!-- Red Accent Glow -->
+        <div class="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-red-500/40 to-transparent"></div>
+        <div class="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-48 bg-red-500/5 rounded-full blur-3xl pointer-events-none"></div>
+
+        <!-- Warning Icon -->
+        <div class="mx-auto w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 mb-6 shadow-inner">
+          <mat-icon class="text-[32px] w-auto h-auto">delete_forever</mat-icon>
+        </div>
+
+        <h2 class="text-xl font-bold font-display text-white mb-2">Vymazať celú databázu?</h2>
+        
+        <p class="text-white/60 text-xs leading-relaxed mb-6 font-light">
+          Tento krok **natrvalo odstráni** všetkých zaregistrovaných klientov, históriu ich návštev, ceny a interné klientske karty. Dáta nie je možné obnoviť.
+        </p>
+
+        <div class="flex flex-col gap-3 w-full font-sans">
+          <button 
+            (click)="wipeEntireApplication()"
+            class="w-full bg-gradient-to-r from-red-500 to-rose-600 hover:opacity-90 active:scale-[0.98] text-white font-semibold py-3.5 rounded-xl transition-all shadow-[0_4px_20px_rgba(239,68,68,0.2)] flex items-center justify-center gap-2 uppercase tracking-wider text-xs">
+            <mat-icon class="text-[18px]">gpp_maybe</mat-icon> Vymazat celú appku
+          </button>
+          
+          <button 
+            (click)="closeWipeModal()"
+            class="w-full bg-white/5 hover:bg-white/10 border border-white/5 text-gray-400 font-medium py-3 rounded-xl transition-all text-xs tracking-wider uppercase">
+            Zrušiť
           </button>
         </div>
       </div>

@@ -1,13 +1,12 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { db, type Customer, type Visit } from './db';
 import { liveQuery } from 'dexie';
-import seedDataJson from './seed-data.json';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CustomerService {
-  private customersList = signal<Customer[]>([]);
+  customersList = signal<Customer[]>([]);
   searchQuery = signal('');
   private isSeeding = false;
 
@@ -31,8 +30,9 @@ export class CustomerService {
     // Sync Dexie to Signal
     liveQuery(() => db.customers.toArray()).subscribe(async c => {
       this.customersList.set(c);
-      // Seed data if empty and not already seeding
-      if (c.length === 0 && !this.isSeeding) {
+      const dontReseed = typeof localStorage !== 'undefined' && localStorage.getItem('dont_reseed_after_wipe') === 'true';
+      // Seed data if empty, not already seeding, and not blocked by explicit user wipe
+      if (c.length === 0 && !this.isSeeding && !dontReseed) {
         this.isSeeding = true;
         try {
           await this.seedData();
@@ -41,6 +41,20 @@ export class CustomerService {
         }
       }
     });
+  }
+
+  async wipeAllData() {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('dont_reseed_after_wipe', 'true');
+    }
+    this.isSeeding = true;
+    try {
+      await db.visits.clear();
+      await db.customers.clear();
+      this.customersList.set([]);
+    } finally {
+      this.isSeeding = false;
+    }
   }
 
   async addCustomer(customer: Omit<Customer, 'id'>) {
@@ -145,43 +159,38 @@ export class CustomerService {
   }
 
   private async seedData() {
-    // Double check to avoid race conditions
+    // Force clear old mock data and set a fresh deployment key
+    if (typeof localStorage !== 'undefined' && !localStorage.getItem('did_clear_everything_except_one_vzor_v4')) {
+       await db.customers.clear();
+       await db.visits.clear();
+       localStorage.setItem('did_clear_everything_except_one_vzor_v4', 'true');
+    }
+
     const count = await db.customers.count();
-    if (count > 0 && typeof localStorage !== 'undefined' && !localStorage.getItem('did_reseed_new_contacts')) {
-       await db.customers.clear(); // wipe old mock
-       localStorage.setItem('did_reseed_new_contacts', 'true');
-    } else if (count > 0) {
+    if (count > 0) {
        return;
     }
-    
-    const mappedSeedData: Omit<Customer, 'id'>[] = seedDataJson.map((item: { name?: string; lastName?: string; phone?: string; email?: string }) => ({
-      name: item.name || '',
-      lastName: item.lastName || '',
-      phone: item.phone || '',
-      email: item.email || '',
-      tags: [],
-    }));
 
     const initialCustomers: Omit<Customer, 'id'>[] = [
-      ...mappedSeedData,
-      { name: 'Jozef', lastName: 'Mrkva', phone: '0901 123 456', tags: ['Pravidelný', 'Fade'], lastVisit: new Date('2024-03-15') },
-      { name: 'Peter', lastName: 'Slanina', phone: '0905 555 666', tags: ['VIP', 'Brada'], lastVisit: new Date('2024-04-10') },
-      { name: 'Andrej', lastName: 'Hruška', phone: '0911 222 333', tags: ['Novi'], lastVisit: new Date('2024-02-20') },
-      { name: 'Michal', lastName: 'Zeler', phone: '0908 999 000', tags: ['Farbenie'], lastVisit: new Date('2024-03-30') },
-      { name: 'Boris', lastName: 'Cibuľa', phone: '0944 111 222', tags: ['Fade', 'Junior'], lastVisit: new Date('2024-04-01') },
-      { name: 'Adam', lastName: 'Jablko', phone: '0910 333 444', tags: ['Pravidelný'], lastVisit: new Date('2024-04-15') },
+      { 
+        name: 'Jozef', 
+        lastName: 'Mrkva', 
+        phone: '0911 222 333', 
+        tags: ['VIP', 'Farbenie', 'Brada'], 
+        lastVisit: new Date('2026-06-12T10:00:00Z') 
+      }
     ];
 
     for (const c of initialCustomers) {
       const id = await this.addCustomer(c);
-      // Add fake visit
+      // Add one default visit
       if (c.lastVisit) {
         await this.addVisit({
           customerId: id,
           date: c.lastVisit,
-          service: c.tags[0] || 'Strih',
-          price: 25,
-          note: 'Klasický strih, spokojnosť.'
+          service: 'Strih + Farbenie + Brada',
+          price: 35,
+          note: 'Prvotriedny servis, upravená brada a svieža farba podľa požiadaviek.'
         });
       }
     }

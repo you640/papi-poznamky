@@ -1,71 +1,67 @@
-<section class="flex-1 bg-papi-gray/10 flex flex-col p-4 md:p-8 overflow-hidden relative">
-  <!-- Top Navigation Bar -->
+<section class="flex-1 bg-papi-gray/10 flex flex-col p-4 md:p-8 overflow-y-auto custom-scrollbar relative select-none h-full">
+  <!-- Top Navigation Bar (Sleek Mobile App Header) -->
   <div class="w-full flex justify-between items-center md:hidden mb-4 shrink-0">
-    <button (click)="closed.emit()" class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white hover:border-papi-gold/50 transition-all shrink-0 backdrop-blur-md">
-      <mat-icon class="text-[18px]">arrow_back</mat-icon>
-    </button>
-    <button (click)="closed.emit()" class="circle-btn md:hidden ml-auto">
-      <mat-icon class="text-[18px]">close</mat-icon>
+    <button (click)="closed.emit()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-white hover:border-papi-gold/50 transition-all text-xs font-medium backdrop-blur-md">
+      <mat-icon class="text-[16px] w-[16px] h-[16px] flex items-center justify-center">arrow_back</mat-icon>
+      <span>Späť</span>
     </button>
   </div>
 
   <div class="hidden md:flex justify-end mb-4 shrink-0 w-full">
      <button (click)="closed.emit()" class="circle-btn">
         <mat-icon class="text-[18px]">close</mat-icon>
-      </button>
+       </button>
   </div>
 
   <!-- Detail Header (Minimalistic as requested) -->
-  <div class="flex flex-col items-center text-center min-w-0 shrink-0 slide-in-from-top-4 duration-[800ms] ease-out animate-in fade-in relative z-10 w-full mb-8">
+  <div class="flex flex-col items-center text-center min-w-0 shrink-0 slide-in-from-top-4 duration-[800ms] ease-out animate-in fade-in relative z-10 w-full mb-6">
     @let c = customer();
 
     <!-- Luxurious Avatar -->
-    <div class="mx-auto w-24 h-24 md:w-[120px] md:h-[120px] rounded-full border border-papi-gold/20 p-[2px] mb-6 shadow-[0_0_40px_rgba(216,181,137,0.15)] relative">
-      <div class="w-full h-full bg-[#0d0d0e] rounded-full flex items-center justify-center text-papi-gold text-[2.8rem] md:text-[3.5rem] font-light font-display">
+    <div class="mx-auto w-20 h-20 md:w-[110px] md:h-[110px] rounded-full border border-papi-gold/20 p-[2px] mb-4 shadow-[0_0_30px_rgba(216,181,137,0.12)] relative">
+      <div class="w-full h-full bg-[#0d0d0e] rounded-full flex items-center justify-center text-papi-gold text-[2.2rem] md:text-[3rem] font-light font-display">
         {{ getInitials(c) }}
       </div>
-      <div class="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-papi-gold flex items-center justify-center text-black shadow-lg">
-        <mat-icon class="text-[16px]">verified</mat-icon>
+      <div class="absolute -bottom-0.5 -right-0.5 w-6 h-6 md:w-8 md:h-8 rounded-full bg-papi-gold flex items-center justify-center text-black shadow-lg">
+        <mat-icon class="text-[12px] md:text-[16px] flex items-center justify-center">verified</mat-icon>
       </div>
     </div>
     
-    <h1 class="text-[2.2rem] md:text-[3rem] font-display text-white truncate tracking-tight w-full mb-1">{{ c.name }} <span class="font-normal">{{ c.lastName }}</span></h1>
+    <h1 class="text-[1.8rem] md:text-[2.6rem] font-display text-white truncate tracking-tight w-full mb-1 select-text select-all">{{ c.name }} <span class="font-normal">{{ c.lastName }}</span></h1>
     
-    <div class="h-[1px] w-16 bg-gradient-to-r from-transparent via-papi-gold/40 to-transparent my-4 mx-auto"></div>
+    <div class="h-[1px] w-12 bg-gradient-to-r from-transparent via-papi-gold/40 to-transparent my-3 mx-auto"></div>
     
-    <div class="flex flex-col md:flex-row items-center gap-4 md:gap-8 text-[15px] font-light text-white/50 tracking-wide">
-      <span class="flex items-center gap-2.5 hover:text-papi-gold transition-colors cursor-pointer group">
-        <mat-icon class="text-[20px] text-papi-gold/70 group-hover:text-papi-gold">phone_iphone</mat-icon> {{ c.phone }}
+    <div class="flex flex-col md:flex-row items-center gap-3 md:gap-6 text-[14px] font-light text-white/50 tracking-wide">
+      <span class="flex items-center gap-2 hover:text-papi-gold transition-colors cursor-pointer group select-text select-all">
+        <mat-icon class="text-[18px] text-papi-gold/70 group-hover:text-papi-gold">phone_iphone</mat-icon> {{ c.phone }}
       </span>
       @if (c.email) {
-        <span class="flex items-center gap-2.5 truncate hover:text-papi-gold transition-colors cursor-pointer group">
-          <mat-icon class="text-[20px] text-papi-gold/70 group-hover:text-papi-gold shrink-0">mail</mat-icon> <span class="truncate">{{ c.email }}</span>
+        <span class="flex items-center gap-2 truncate hover:text-papi-gold transition-colors cursor-pointer group select-text select-all">
+          <mat-icon class="text-[18px] text-papi-gold/70 group-hover:text-papi-gold shrink-0">mail</mat-icon> <span class="truncate">{{ c.email }}</span>
         </span>
       } @else {
-        <span class="flex items-center gap-2.5 opacity-40 italic">
-          <mat-icon class="text-[18px]">mail</mat-icon> Bez e-mailu
+        <span class="flex items-center gap-2 opacity-40 italic">
+          <mat-icon class="text-[16px]">mail</mat-icon> Bez e-mailu
         </span>
       }
     </div>
   </div>
 
-  <!-- Note taking area (from roughly 50vh down) -->
-  <div class="flex-1 flex flex-col min-h-[50vh] border-t border-white/5 pt-8 w-full animate-in fade-in slide-in-from-bottom-8 duration-700">
-     <div class="flex items-center justify-between mb-4 shrink-0">
-        <div class="text-[11px] text-papi-gold opacity-80 uppercase tracking-widest font-semibold flex items-center gap-2">
-            <mat-icon class="text-[18px]">edit_note</mat-icon> Interná klientská karta
+  <!-- Note taking area (Symmetrical and Adaptive Height) -->
+  <div class="flex-1 flex flex-col border-t border-white/5 pt-6 w-full animate-in fade-in slide-in-from-bottom-8 duration-700">
+     <div class="flex items-center justify-between mb-3 shrink-0">
+        <div class="text-[10px] text-papi-gold opacity-80 uppercase tracking-widest font-semibold flex items-center gap-2">
+            <mat-icon class="text-[16px]">edit_note</mat-icon> Interná klientská karta
         </div>
-        
-        <!-- Status indicator for saving if needed, keeping it simple -->
      </div>
      
      <!-- Massive Textarea -->
      <textarea 
       [(ngModel)]="editNotes"
-      class="flex-1 w-full bg-[#111112]/80 border border-white/10 rounded-2xl p-5 text-white/90 focus:outline-none focus:border-papi-gold/50 focus:ring-1 focus:ring-papi-gold/20 transition-all font-sans text-[15px] leading-relaxed custom-scrollbar resize-none backdrop-blur-md shadow-inner"
+      class="w-full min-h-[180px] md:flex-1 bg-[#111112]/80 border border-white/10 rounded-2xl p-4 text-white/90 focus:outline-none focus:border-papi-gold/50 focus:ring-1 focus:ring-papi-gold/20 transition-all font-sans text-[14px] leading-relaxed custom-scrollbar resize-none backdrop-blur-md shadow-inner select-text mb-6"
       placeholder="Miesto pre dôležité záznamy, preferencie, typ farby alebo iné poznámky..."></textarea>
       
-     <button (click)="saveChanges()" class="mt-4 shrink-0 w-full bg-gradient-to-r from-[#D8B589] to-[#EFDBC2] hover:opacity-90 text-black font-semibold tracking-wide py-4 md:py-5 rounded-2xl transition-all shadow-[0_4px_20px_rgba(216,181,137,0.2)] flex items-center justify-center gap-2 active:scale-[0.98]">
+     <button (click)="saveChanges()" class="shrink-0 w-full bg-gradient-to-r from-[#D8B589] to-[#EFDBC2] hover:opacity-90 text-black font-semibold tracking-wide py-4.5 rounded-2xl transition-all shadow-[0_4px_20px_rgba(216,181,137,0.2)] flex items-center justify-center gap-2 active:scale-[0.98] mb-4">
        <mat-icon class="text-[20px]">save</mat-icon> ULOŽIŤ DO SYSTÉMU
      </button>
   </div>

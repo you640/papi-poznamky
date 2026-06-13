@@ -28,6 +28,7 @@ export class App {
   isAddingCustomer = signal(false);
   bookingCustomer = signal<Customer | null>(null);
   isExportModalOpen = signal(false);
+  isWipeModalOpen = signal(false);
 
   // Quick Action / Long Press States
   longPressTimer: ReturnType<typeof setTimeout> | null = null;
@@ -129,6 +130,16 @@ export class App {
 
   // --- QUICK ACTIONS / LONG PRESS LOGIC ---
 
+  triggerHapticFeedback() {
+    if (typeof window !== 'undefined' && typeof navigator !== 'undefined' && navigator.vibrate) {
+      try {
+        navigator.vibrate(20); // Subtle 20ms vibration for beautiful tactile touch response
+      } catch (e) {
+        console.warn('Haptic feedback is not supported or was blocked:', e);
+      }
+    }
+  }
+
   onPointerDown(event: PointerEvent, customer: Customer) {
     if (event.pointerType === 'mouse' && event.button !== 0) return; // Only left click or touch
     
@@ -140,6 +151,7 @@ export class App {
         x: Math.min(event.clientX, window.innerWidth - 260),
         y: Math.min(event.clientY, window.innerHeight - 250)
       };
+      this.triggerHapticFeedback();
     }, 500); // Trigger after 500ms
   }
 
@@ -325,5 +337,20 @@ export class App {
   async runExport() {
     await this.cs.exportToCSV(this.exportFilters);
     this.closeExportModal();
+  }
+
+  // --- WIPE ALL LOGIC ---
+  openWipeModal() {
+    this.isWipeModalOpen.set(true);
+  }
+
+  closeWipeModal() {
+    this.isWipeModalOpen.set(false);
+  }
+
+  async wipeEntireApplication() {
+    await this.cs.wipeAllData();
+    this.closeDetail();
+    this.closeWipeModal();
   }
 }
