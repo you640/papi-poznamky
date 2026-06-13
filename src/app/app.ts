@@ -38,9 +38,13 @@ export class App {
   // Forms & Modal states
   newCust = { name: '', lastName: '', phone: '', email: '', tags: '' };
   newVisit = { date: new Date().toISOString().split('T')[0], service: '', price: null as number | null, note: '' };
-  exportFilters = { dateFrom: '', dateTo: '', tag: '' };
+  exportFilters = { tag: '' };
 
   customerItems = viewChildren<ElementRef>('customerItem');
+
+  showPersistencePrompt = signal(false);
+  isPersistenceLoading = signal(false);
+  persistenceRequestFailed = signal(false);
 
   // Expose isMobile detector property for templates
   get isMobile(): boolean {
@@ -49,6 +53,7 @@ export class App {
   }
 
   constructor() {
+    this.checkPersistence();
     // Initial and subsequent animations
     effect(() => {
       const items = this.customerItems();
@@ -62,6 +67,52 @@ export class App {
         );
       }
     });
+  }
+
+  async checkPersistence() {
+    if (typeof window === 'undefined' || !navigator.storage || !navigator.storage.persist) {
+      return;
+    }
+    try {
+      const alreadyPersisted = await navigator.storage.persisted();
+      const dismissed = localStorage.getItem('papi_persistence_prompt_dismissed_v2') === 'true';
+      if (!alreadyPersisted && !dismissed) {
+        setTimeout(() => {
+          this.showPersistencePrompt.set(true);
+        }, 1200);
+      }
+    } catch (e) {
+      console.warn('Persistence check error:', e);
+    }
+  }
+
+  async requestPersistence() {
+    this.isPersistenceLoading.set(true);
+    this.persistenceRequestFailed.set(false);
+    if (typeof window !== 'undefined' && navigator.storage && navigator.storage.persist) {
+      try {
+        const persisted = await navigator.storage.persist();
+        if (persisted) {
+          localStorage.setItem('papi_persistence_prompt_dismissed_v2', 'true');
+          this.showPersistencePrompt.set(false);
+        } else {
+          this.persistenceRequestFailed.set(true);
+        }
+      } catch (e) {
+        console.error('Persistence request failed:', e);
+        this.persistenceRequestFailed.set(true);
+      } finally {
+        this.isPersistenceLoading.set(false);
+      }
+    } else {
+      this.isPersistenceLoading.set(false);
+      this.showPersistencePrompt.set(false);
+    }
+  }
+
+  dismissPersistence() {
+    localStorage.setItem('papi_persistence_prompt_dismissed_v2', 'true');
+    this.showPersistencePrompt.set(false);
   }
 
   async selectCustomer(customer: Customer) {
@@ -263,7 +314,7 @@ export class App {
 
   // --- EXPORT LOGIC ---
   openExportModal() {
-    this.exportFilters = { dateFrom: '', dateTo: '', tag: '' };
+    this.exportFilters = { tag: '' };
     this.isExportModalOpen.set(true);
   }
 

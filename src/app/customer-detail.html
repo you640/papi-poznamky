@@ -16,30 +16,33 @@
   </div>
 
   <!-- Detail Header (Minimalistic as requested) -->
-  <div class="flex flex-col items-center md:items-start text-center md:text-left min-w-0 shrink-0 slide-in-from-top-4 duration-[800ms] ease-out animate-in fade-in relative z-10 w-full mb-6">
+  <div class="flex flex-col items-center text-center min-w-0 shrink-0 slide-in-from-top-4 duration-[800ms] ease-out animate-in fade-in relative z-10 w-full mb-8">
     @let c = customer();
 
     <!-- Luxurious Avatar -->
-    <div class="mx-auto md:mx-0 w-24 h-24 md:w-[100px] md:h-[100px] rounded-full border border-papi-gold/20 p-[2px] mb-4 shadow-[0_0_30px_rgba(216,181,137,0.1)]">
-      <div class="w-full h-full bg-[#0d0d0e] rounded-full flex items-center justify-center text-papi-gold text-[2.5rem] font-light font-display">
+    <div class="mx-auto w-24 h-24 md:w-[120px] md:h-[120px] rounded-full border border-papi-gold/20 p-[2px] mb-6 shadow-[0_0_40px_rgba(216,181,137,0.15)] relative">
+      <div class="w-full h-full bg-[#0d0d0e] rounded-full flex items-center justify-center text-papi-gold text-[2.8rem] md:text-[3.5rem] font-light font-display">
         {{ getInitials(c) }}
+      </div>
+      <div class="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-papi-gold flex items-center justify-center text-black shadow-lg">
+        <mat-icon class="text-[16px]">verified</mat-icon>
       </div>
     </div>
     
-    <h1 class="text-[2rem] md:text-[2.5rem] font-display text-white truncate tracking-tight w-full">{{ c.name }} <span class="font-normal">{{ c.lastName }}</span></h1>
+    <h1 class="text-[2.2rem] md:text-[3rem] font-display text-white truncate tracking-tight w-full mb-1">{{ c.name }} <span class="font-normal">{{ c.lastName }}</span></h1>
     
-    <div class="h-[1px] w-12 bg-papi-gold/30 my-3 mx-auto md:mx-0"></div>
+    <div class="h-[1px] w-16 bg-gradient-to-r from-transparent via-papi-gold/40 to-transparent my-4 mx-auto"></div>
     
-    <div class="flex flex-col md:flex-row items-center md:items-start gap-2 md:gap-6 text-[14px] font-light text-white/60">
-      <span class="flex items-center gap-2 hover:text-white transition-colors cursor-pointer">
-        <mat-icon class="text-[18px] text-papi-gold">phone_iphone</mat-icon> {{ c.phone }}
+    <div class="flex flex-col md:flex-row items-center gap-4 md:gap-8 text-[15px] font-light text-white/50 tracking-wide">
+      <span class="flex items-center gap-2.5 hover:text-papi-gold transition-colors cursor-pointer group">
+        <mat-icon class="text-[20px] text-papi-gold/70 group-hover:text-papi-gold">phone_iphone</mat-icon> {{ c.phone }}
       </span>
       @if (c.email) {
-        <span class="flex items-center gap-2 truncate hover:text-white transition-colors cursor-pointer">
-          <mat-icon class="text-[18px] text-papi-gold shrink-0">mail</mat-icon> <span class="truncate">{{ c.email }}</span>
+        <span class="flex items-center gap-2.5 truncate hover:text-papi-gold transition-colors cursor-pointer group">
+          <mat-icon class="text-[20px] text-papi-gold/70 group-hover:text-papi-gold shrink-0">mail</mat-icon> <span class="truncate">{{ c.email }}</span>
         </span>
       } @else {
-        <span class="flex items-center gap-2 opacity-50 italic text-sm">
+        <span class="flex items-center gap-2.5 opacity-40 italic">
           <mat-icon class="text-[18px]">mail</mat-icon> Bez e-mailu
         </span>
       }
@@ -47,11 +50,11 @@
   </div>
 
   <!-- Note taking area (from roughly 50vh down) -->
-  <div class="flex-1 flex flex-col min-h-[50vh] border-t border-white/5 pt-6 w-full animate-in fade-in slide-in-from-bottom-8 duration-700">
-     <div class="flex items-center justify-between mb-3 shrink-0">
-        <label class="text-[11px] text-papi-gold opacity-80 uppercase tracking-widest font-semibold flex items-center gap-2">
-            <mat-icon class="text-[16px]">edit_note</mat-icon> Interná poznámka klienta
-        </label>
+  <div class="flex-1 flex flex-col min-h-[50vh] border-t border-white/5 pt-8 w-full animate-in fade-in slide-in-from-bottom-8 duration-700">
+     <div class="flex items-center justify-between mb-4 shrink-0">
+        <div class="text-[11px] text-papi-gold opacity-80 uppercase tracking-widest font-semibold flex items-center gap-2">
+            <mat-icon class="text-[18px]">edit_note</mat-icon> Interná klientská karta
+        </div>
         
         <!-- Status indicator for saving if needed, keeping it simple -->
      </div>

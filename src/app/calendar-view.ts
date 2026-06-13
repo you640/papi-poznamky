@@ -22,26 +22,12 @@ export class CalendarViewComponent {
   
   // Filters
   filterCustomer = signal<number | null>(null);
-  filterDateFrom = signal<string>('');
-  filterDateTo = signal<string>('');
 
   filteredVisits = computed(() => {
     let visits = this.allVisits();
     
     if (this.filterCustomer() !== null) {
       visits = visits.filter(v => v.customerId === this.filterCustomer());
-    }
-    
-    if (this.filterDateFrom()) {
-      const from = new Date(this.filterDateFrom());
-      from.setHours(0,0,0,0);
-      visits = visits.filter(v => new Date(v.date) >= from);
-    }
-    
-    if (this.filterDateTo()) {
-      const to = new Date(this.filterDateTo());
-      to.setHours(23,59,59,999);
-      visits = visits.filter(v => new Date(v.date) <= to);
     }
     
     return visits;

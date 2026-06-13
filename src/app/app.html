@@ -8,29 +8,31 @@
     </div>
 
     <!-- View Toggle - Luxury Segmented Control -->
-    <div class="segmented-control shrink-0 mr-2 md:mr-6">
+    <div class="segmented-control shrink-0 mr-2 md:mr-6 flex items-center">
       <button 
         (click)="currentView.set('customers')"
-        [class.active]="currentView() === 'customers'">
-        <mat-icon class="text-[14px] md:mr-1.5 opacity-80">people</mat-icon>
-        <span class="hidden md:inline">Klienti</span>
+        [class.active]="currentView() === 'customers'"
+        class="flex items-center justify-center">
+        <mat-icon class="text-[16px] md:mr-2 opacity-80">people</mat-icon>
+        <span class="hidden md:inline font-medium">Klienti</span>
       </button>
       <button 
         (click)="currentView.set('calendar')"
-        [class.active]="currentView() === 'calendar'">
-        <mat-icon class="text-[14px] md:mr-1.5 opacity-80">event</mat-icon>
-        <span class="hidden md:inline">Kalendár</span>
+        [class.active]="currentView() === 'calendar'"
+        class="flex items-center justify-center">
+        <mat-icon class="text-[16px] md:mr-2 opacity-80">event</mat-icon>
+        <span class="hidden md:inline font-medium">Kalendár</span>
       </button>
     </div>
 
     <!-- STREDOVÝ SEARCH -->
-    <div class="flex-1 min-w-0 max-w-sm relative group md:ml-auto">
+    <div class="hidden md:flex flex-1 min-w-0 max-w-sm relative group mx-auto">
       <mat-icon class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-papi-gold transition-colors text-[18px] flex items-center justify-center pointer-events-none">search</mat-icon>
       <input 
         [ngModel]="cs.searchQuery()" 
         (ngModelChange)="cs.searchQuery.set($event)"
         class="w-full luxury-input pl-10 pr-10 truncate placeholder:text-white/30"
-        placeholder="Hľadať...">
+        placeholder="Hľadať klienta...">
       
       @if (cs.searchQuery()) {
         <button 
@@ -62,23 +64,36 @@
         [ngClass]="selectedCustomer() ? 'hidden md:flex' : 'flex'"
         class="w-full md:w-[350px] border-r gold-border flex-col bg-papi-dark shrink-0 custom-scrollbar overflow-y-auto absolute md:relative inset-0 z-10 md:z-auto">
         <!-- Quick Filters (Mock UI from Design) -->
-      <div class="p-4 bg-transparent flex gap-2 overflow-x-auto custom-scrollbar border-b border-white/5 shrink-0">
-        <button (click)="setFilter('')" 
-                [class.border-papi-gold]="!cs.searchQuery()" [class.text-papi-gold]="!cs.searchQuery()"
-                [class.border-white/10]="cs.searchQuery()" [class.text-white/40]="cs.searchQuery()"
-                class="px-4 py-1.5 rounded-full border text-[9px] font-medium tracking-[0.2em] uppercase whitespace-nowrap transition-all hover:border-white/30 backdrop-blur-sm">Všetci</button>
-        <button (click)="setFilter('VIP')" 
-                [class.border-papi-gold]="cs.searchQuery() === 'VIP'" [class.text-papi-gold]="cs.searchQuery() === 'VIP'"
-                [class.border-white/10]="cs.searchQuery() !== 'VIP'" [class.text-white/40]="cs.searchQuery() !== 'VIP'"
-                class="px-4 py-1.5 rounded-full border text-[9px] font-medium tracking-[0.2em] uppercase whitespace-nowrap transition-all hover:border-white/30 backdrop-blur-sm">VIP</button>
-        <button (click)="setFilter('Brada')" 
-                [class.border-papi-gold]="cs.searchQuery() === 'Brada'" [class.text-papi-gold]="cs.searchQuery() === 'Brada'"
-                [class.border-white/10]="cs.searchQuery() !== 'Brada'" [class.text-white/40]="cs.searchQuery() !== 'Brada'"
-                class="px-4 py-1.5 rounded-full border text-[9px] font-medium tracking-[0.2em] uppercase whitespace-nowrap transition-all hover:border-white/30 backdrop-blur-sm">Brada</button>
-        <button (click)="setFilter('Farbenie')" 
-                [class.border-papi-gold]="cs.searchQuery() === 'Farbenie'" [class.text-papi-gold]="cs.searchQuery() === 'Farbenie'"
-                [class.border-white/10]="cs.searchQuery() !== 'Farbenie'" [class.text-white/40]="cs.searchQuery() !== 'Farbenie'"
-                class="px-4 py-1.5 rounded-full border text-[9px] font-medium tracking-[0.2em] uppercase whitespace-nowrap transition-all hover:border-white/30 backdrop-blur-sm">Farbenie</button>
+      <div class="px-4 py-3 bg-transparent flex flex-col gap-4 border-b border-white/5 shrink-0">
+        
+        <!-- Search for mobile integrated into aside when view is customers -->
+        <div class="md:hidden relative group w-full">
+           <mat-icon class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-papi-gold transition-colors text-[18px] flex items-center justify-center pointer-events-none">search</mat-icon>
+           <input 
+             [ngModel]="cs.searchQuery()" 
+             (ngModelChange)="cs.searchQuery.set($event)"
+             class="w-full luxury-input pl-10 pr-10 truncate placeholder:text-white/30 text-sm py-2"
+             placeholder="Hľadať klienta...">
+        </div>
+
+        <div class="flex gap-2 overflow-x-auto custom-scrollbar no-scrollbar">
+          <button (click)="setFilter('')" 
+                  [class.border-papi-gold]="!cs.searchQuery()" [class.text-papi-gold]="!cs.searchQuery()"
+                  [class.border-white/10]="cs.searchQuery()" [class.text-white/40]="cs.searchQuery()"
+                  class="px-4 py-1.5 rounded-full border text-[9px] font-medium tracking-[0.2em] uppercase whitespace-nowrap transition-all hover:border-white/30 backdrop-blur-sm">Všetci</button>
+          <button (click)="setFilter('VIP')" 
+                  [class.border-papi-gold]="cs.searchQuery() === 'VIP'" [class.text-papi-gold]="cs.searchQuery() === 'VIP'"
+                  [class.border-white/10]="cs.searchQuery() !== 'VIP'" [class.text-white/40]="cs.searchQuery() !== 'VIP'"
+                  class="px-4 py-1.5 rounded-full border text-[9px] font-medium tracking-[0.2em] uppercase whitespace-nowrap transition-all hover:border-white/30 backdrop-blur-sm">VIP</button>
+          <button (click)="setFilter('Brada')" 
+                  [class.border-papi-gold]="cs.searchQuery() === 'Brada'" [class.text-papi-gold]="cs.searchQuery() === 'Brada'"
+                  [class.border-white/10]="cs.searchQuery() !== 'Brada'" [class.text-white/40]="cs.searchQuery() !== 'Brada'"
+                  class="px-4 py-1.5 rounded-full border text-[9px] font-medium tracking-[0.2em] uppercase whitespace-nowrap transition-all hover:border-white/30 backdrop-blur-sm">Brada</button>
+          <button (click)="setFilter('Farbenie')" 
+                  [class.border-papi-gold]="cs.searchQuery() === 'Farbenie'" [class.text-papi-gold]="cs.searchQuery() === 'Farbenie'"
+                  [class.border-white/10]="cs.searchQuery() !== 'Farbenie'" [class.text-white/40]="cs.searchQuery() !== 'Farbenie'"
+                  class="px-4 py-1.5 rounded-full border text-[9px] font-medium tracking-[0.2em] uppercase whitespace-nowrap transition-all hover:border-white/30 backdrop-blur-sm">Farbenie</button>
+        </div>
       </div>
 
       <div class="flex-1 p-3 md:p-5 space-y-3 pb-[100px]">
@@ -272,18 +287,7 @@
         </div>
         
         <div class="flex flex-col gap-4">
-          <p class="text-xs text-gray-400 italic mb-2">Vyberte filtre, ak chcete obmedziť exportované dáta (Návštevy + Klienti). Pre export celej databázy nechajte polia prázdne.</p>
-          
-          <div class="flex gap-4">
-            <div class="flex-1">
-              <label for="expFrom" class="text-[10px] text-gray-500 uppercase font-bold ml-1">Dátum od</label>
-              <input id="expFrom" type="date" [(ngModel)]="exportFilters.dateFrom" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-2.5 text-white outline-none focus:border-papi-gold/50 text-sm">
-            </div>
-            <div class="flex-1">
-              <label for="expTo" class="text-[10px] text-gray-500 uppercase font-bold ml-1">Dátum do</label>
-              <input id="expTo" type="date" [(ngModel)]="exportFilters.dateTo" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-2.5 text-white outline-none focus:border-papi-gold/50 text-sm">
-            </div>
-          </div>
+          <p class="text-xs text-gray-400 italic mb-2">Vyberte tag, ak chcete obmedziť exportované dáta. Pre export celej databázy nechajte pole prázdne.</p>
           
           <div>
             <label for="expTag" class="text-[10px] text-gray-500 uppercase font-bold ml-1">Filter podľa Tagu</label>
@@ -333,6 +337,60 @@
       <button (click)="qmToggleVip(customer)" class="w-full text-left px-3 py-3 text-sm text-white hover:bg-papi-gray rounded-xl transition-colors flex items-center gap-3">
         <mat-icon class="text-[16px] text-papi-gold">star</mat-icon> Prepnúť VIP status
       </button>
+    </div>
+  }
+
+  <!-- STORAGE PERSISTENCE PROMPT -->
+  @if (showPersistencePrompt()) {
+    <div class="fixed inset-0 z-[150] flex items-end md:items-center justify-center bg-black/80 backdrop-blur-md md:p-4 animate-in fade-in duration-200">
+      <div class="bg-[#0e0e0f] border-t md:border border-white/10 md:rounded-3xl rounded-t-3xl rounded-b-none w-full max-w-md p-6 md:p-8 shadow-2xl flex flex-col animate-in slide-in-from-bottom-full md:zoom-in-95 duration-300 pb-[calc(2rem+env(safe-area-inset-bottom))] max-h-[90vh] overflow-y-auto custom-scrollbar text-center relative overflow-hidden">
+        
+        <!-- Luxury Accent Glow -->
+        <div class="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-[#D8B589] to-transparent"></div>
+        <div class="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-48 bg-papi-gold/5 rounded-full blur-3xl pointer-events-none"></div>
+
+        <!-- Shield Icon -->
+        <div class="mx-auto w-16 h-16 rounded-2xl bg-papi-gold/10 border border-papi-gold/20 flex items-center justify-center text-papi-gold mb-6 shadow-inner">
+          <mat-icon class="text-[32px] w-auto h-auto">shield</mat-icon>
+        </div>
+
+        <h2 class="text-xl md:text-2xl font-bold font-display text-white mb-3">Chrániť lokálne poznámky?</h2>
+        
+        <p class="text-white/70 text-sm leading-relaxed mb-6 font-light">
+          Pre každého klienta je vyhradených až <span class="text-papi-gold font-medium">4,9 MB pamäte</span> v telefóne pre lokálne poznámky. 
+          Prehliadače (najmä Safari na iPhone) môžu pri nízkom voľnom mieste neaktívne weby vyčistiť. 
+          Aktivujte trvalé uzamknutie pre 100% ochranu pred vymazaním.
+        </p>
+
+        @if (persistenceRequestFailed()) {
+          <div class="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 text-left text-xs mb-6 text-red-200/90 leading-relaxed font-light flex gap-3">
+            <mat-icon class="text-[18px] text-red-500 shrink-0 mt-0.5">info</mat-icon>
+            <div>
+              <span class="font-semibold block mb-0.5">Vyžaduje sa pridanie na plochu</span>
+              Váš prehliadač (Safari/Chrome) vyžaduje pridanie tejto aplikácie na plochu pre dokonalú persistentnú záchranu údajov. Kliknite na <span class="font-semibold text-white">Pridať na domovskú obrazovku</span> (Zdieľať menu) a otvorte appku priamo z nej.
+            </div>
+          </div>
+        }
+
+        <div class="flex flex-col gap-3 w-full">
+          <button 
+            (click)="requestPersistence()" 
+            [disabled]="isPersistenceLoading()"
+            class="w-full bg-gradient-to-r from-[#D8B589] to-[#EFDBC2] hover:opacity-90 disabled:opacity-50 text-black font-semibold py-4 rounded-xl transition-all shadow-[0_4px_20px_rgba(216,181,137,0.15)] flex items-center justify-center gap-2">
+            @if (isPersistenceLoading()) {
+              <span class="animate-pulse">Aktivuje sa ochrana...</span>
+            } @else {
+              <mat-icon>verified_user</mat-icon> AKTIVOVAŤ TRVALÚ OCHRANU
+            }
+          </button>
+          
+          <button 
+            (click)="dismissPersistence()" 
+            class="w-full bg-white/5 hover:bg-white/10 border border-white/5 text-gray-400 font-medium py-3 rounded-xl transition-all text-xs tracking-wider uppercase">
+            Neskôr
+          </button>
+        </div>
+      </div>
     </div>
   }
 </div>

@@ -81,21 +81,9 @@ export class CustomerService {
     return await db.visits.update(id, changes);
   }
 
-  async exportToCSV(filters: { dateFrom: string, dateTo: string, tag: string }) {
+  async exportToCSV(filters: { tag: string }) {
     const customers = await db.customers.toArray();
-    let visits = await db.visits.toArray();
-
-    // 1. Date filters on visits
-    if (filters.dateFrom) {
-      const fd = new Date(filters.dateFrom);
-      fd.setHours(0, 0, 0, 0);
-      visits = visits.filter(v => new Date(v.date) >= fd);
-    }
-    if (filters.dateTo) {
-      const td = new Date(filters.dateTo);
-      td.setHours(23, 59, 59, 999);
-      visits = visits.filter(v => new Date(v.date) <= td);
-    }
+    const visits = await db.visits.toArray();
 
     // 2. Format as flat table Array
     const rows = [];
@@ -132,8 +120,6 @@ export class CustomerService {
           rows.push([custName, custPhone, custTags, vDate, vService, vPrice, vNote, custNotes]);
         });
       } else {
-        // Only include customers with no visits in range IF date range wasn't strict
-        // Or include them explicitly so user gets full filtered base
         // We will include them but with empty visit data
         rows.push([custName, custPhone, custTags, '""', '""', '""', '""', custNotes]);
       }
@@ -168,11 +154,11 @@ export class CustomerService {
        return;
     }
     
-    const mappedSeedData: Omit<Customer, 'id'>[] = seedDataJson.map(item => ({
+    const mappedSeedData: Omit<Customer, 'id'>[] = seedDataJson.map((item: { name?: string; lastName?: string; phone?: string; email?: string }) => ({
       name: item.name || '',
-      lastName: (item as any).lastName || '',
+      lastName: item.lastName || '',
       phone: item.phone || '',
-      email: (item as any).email || '',
+      email: item.email || '',
       tags: [],
     }));
 
