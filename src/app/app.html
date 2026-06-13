@@ -102,6 +102,27 @@
                   [class.border-white/10]="cs.searchQuery() !== 'Farbenie'" [class.text-white/40]="cs.searchQuery() !== 'Farbenie'"
                   class="px-4 py-1.5 rounded-full border text-[9px] font-medium tracking-[0.2em] uppercase whitespace-nowrap transition-all hover:border-white/30 backdrop-blur-sm">Farbenie</button>
         </div>
+
+        <!-- Luxusný Radiálny Dropdown pre zoradenie -->
+        <div class="flex items-center justify-between border-t border-white/5 pt-3 mt-1 text-[11px] select-none">
+          <span class="text-white/30 uppercase tracking-[0.12em] font-medium flex items-center gap-1.5">
+            <mat-icon class="text-[14px] w-[14px] h-[14px] flex items-center justify-center leading-none text-papi-gold/60">sort</mat-icon> ZORADIŤ PODĽA:
+          </span>
+          <div class="relative flex items-center shrink-0">
+            <select
+              [ngModel]="cs.sortBy()"
+              (ngModelChange)="cs.sortBy.set($event)"
+              class="appearance-none bg-[#111112]/90 border border-white/10 rounded-xl pl-3 pr-8 py-1.5 text-papi-gold text-[11px] font-medium tracking-wide focus:outline-none focus:border-papi-gold/40 cursor-pointer min-w-[130px] shadow-sm select-text">
+              <option value="alphabetical" class="bg-papi-dark text-white/90">Priezvisko (A-Z)</option>
+              <option value="lastVisit" class="bg-papi-dark text-white/90">Posledná návšteva</option>
+              <option value="mostFrequent" class="bg-papi-dark text-white/90">Počet návštev</option>
+            </select>
+            <!-- Custom chevron overlay -->
+            <div class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-papi-gold/80 flex items-center justify-center">
+              <mat-icon class="text-[12px] w-[12px] h-[12px] flex items-center justify-center leading-none">keyboard_arrow_down</mat-icon>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="flex-1 p-3 md:p-5 space-y-3 pb-[100px]">
@@ -150,7 +171,14 @@
                 <p class="text-white/40 text-[11px] font-light">{{ customer.phone }}</p>
               </div>
             </div>
-            @if (customer.lastVisit) {
+            @if (cs.sortBy() === 'mostFrequent') {
+              <div class="text-right relative z-10 shrink-0">
+                <div class="text-[9px] text-[#D8B589] opacity-70 uppercase tracking-[0.1em] font-medium mb-0.5">Návštevy</div>
+                <div class="text-[12px] text-white/80 font-bold tracking-wide flex items-center justify-end gap-0.5 bg-papi-gold/5 px-2 py-0.5 rounded-lg border border-papi-gold/10">
+                  <span class="text-papi-gold">{{ cs.getVisitCount(customer.id) }}</span><span class="text-[9px] text-white/40">x</span>
+                </div>
+              </div>
+            } @else if (customer.lastVisit) {
               <div class="text-right relative z-10 shrink-0">
                 <div class="text-[9px] text-[#D8B589] opacity-70 uppercase tracking-[0.1em] font-medium mb-1">Posledná</div>
                 <div class="text-[11px] text-white/50">{{ customer.lastVisit | date:'dd.MM.yy' }}</div>

@@ -23,7 +23,7 @@ describe('Papi CRM Functional Logic', () => {
 
   it('should seed initial customers', async () => {
     const customers = service.filteredCustomers();
-    expect(customers.length).toBe(6); // 6 seeded customers
+    expect(customers.length).toBe(1); // 1 seeded customer
     expect(customers.some(c => c.lastName === 'Mrkva')).toBe(true);
   });
 
@@ -84,20 +84,20 @@ describe('Papi CRM Functional Logic', () => {
     
     const visits = await service.getCustomerVisits(jozef.id!);
     expect(visits.length).toBe(1);
-    expect(visits[0].service).toBe('Pravidelný');
+    expect(visits[0].service).toBe('Strih + Farbenie + Brada');
   });
 
   it('should update last visit date when adding a visit', async () => {
-    service.searchQuery.set('Slanina');
+    service.searchQuery.set('Mrkva');
     await new Promise(resolve => setTimeout(resolve, 50));
     
-    const peter = service.filteredCustomers()[0];
-    expect(peter).toBeDefined();
+    const jozef = service.filteredCustomers()[0];
+    expect(jozef).toBeDefined();
     
     const newDate = new Date();
     
     await service.addVisit({
-      customerId: peter.id!,
+      customerId: jozef.id!,
       date: newDate,
       service: 'Extra Fade',
       price: 30,
@@ -106,8 +106,8 @@ describe('Papi CRM Functional Logic', () => {
     
     await new Promise(resolve => setTimeout(resolve, 100));
     
-    const updatedPeter = await db.customers.get(peter.id!);
-    expect(updatedPeter?.lastVisit).toEqual(newDate);
+    const updatedJozef = await db.customers.get(jozef.id!);
+    expect(updatedJozef?.lastVisit).toEqual(newDate);
   });
 
   it('should update customer phone and notes', async () => {

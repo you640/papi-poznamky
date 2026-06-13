@@ -8,31 +8,73 @@ import { liveQuery } from 'dexie';
 export class CustomerService {
   customersList = signal<Customer[]>([]);
   searchQuery = signal('');
+  visitCounts = signal<Record<number, number>>({});
+  sortBy = signal<'alphabetical' | 'lastVisit' | 'mostFrequent'>('alphabetical');
   private isSeeding = false;
 
   filteredCustomers = computed(() => {
     const query = this.searchQuery().toLowerCase().trim();
-    const sorted = [...this.customersList()].sort((a, b) => 
-      a.lastName.localeCompare(b.lastName)
-    );
+    let result = [...this.customersList()];
 
-    if (!query) return sorted;
+    if (query) {
+      result = result.filter(c => 
+        c.name.toLowerCase().includes(query) || 
+        c.lastName.toLowerCase().includes(query) ||
+        c.phone.includes(query) ||
+        c.tags.some(t => t.toLowerCase().includes(query))
+      );
+    }
 
-    return sorted.filter(c => 
-      c.name.toLowerCase().includes(query) || 
-      c.lastName.toLowerCase().includes(query) ||
-      c.phone.includes(query) ||
-      c.tags.some(t => t.toLowerCase().includes(query))
-    );
+    const mode = this.sortBy();
+    if (mode === 'lastVisit') {
+      result.sort((a, b) => {
+        const timeA = a.lastVisit ? new Date(a.lastVisit).getTime() : 0;
+        const timeB = b.lastVisit ? new Date(b.lastVisit).getTime() : 0;
+        if (timeA !== timeB) return timeB - timeA;
+        return a.lastName.localeCompare(b.lastName);
+      });
+    } else if (mode === 'mostFrequent') {
+      result.sort((a, b) => {
+        const countA = this.visitCounts()[a.id!] || 0;
+        const countB = this.visitCounts()[b.id!] || 0;
+        if (countA !== countB) return countB - countA;
+        return a.lastName.localeCompare(b.lastName);
+      });
+    } else {
+      result.sort((a, b) => {
+        const cmp = a.lastName.localeCompare(b.lastName);
+        if (cmp !== 0) return cmp;
+        return a.name.localeCompare(b.name);
+      });
+    }
+
+    return result;
   });
 
+  getVisitCount(customerId: number | undefined): number {
+    if (!customerId) return 0;
+    return this.visitCounts()[customerId] || 0;
+  }
+
   constructor() {
-    // Sync Dexie to Signal
-    liveQuery(() => db.customers.toArray()).subscribe(async c => {
-      this.customersList.set(c);
+    // Sync Dexie to Signal reactively (both customers and visits)
+    liveQuery(async () => {
+      const customers = await db.customers.toArray();
+      const visits = await db.visits.toArray();
+      const counts: Record<number, number> = {};
+      for (const v of visits) {
+        if (v.customerId) {
+          counts[v.customerId] = (counts[v.customerId] || 0) + 1;
+        }
+      }
+      return { customers, counts };
+    }).subscribe(async ({ customers, counts }) => {
+      this.visitCounts.set(counts);
+      this.customersList.set(customers);
+      
       const dontReseed = typeof localStorage !== 'undefined' && localStorage.getItem('dont_reseed_after_wipe') === 'true';
-      // Seed data if empty, not already seeding, and not blocked by explicit user wipe
-      if (c.length === 0 && !this.isSeeding && !dontReseed) {
+      // Seed data if empty and not already seeding
+      if (customers.length === 0 && !this.isSeeding && !dontReseed) {
         this.isSeeding = true;
         try {
           await this.seedData();

@@ -241,6 +241,9 @@ export class App {
   }
 
   isFirstOfLetter(customer: Customer, index: number): boolean {
+    if (this.cs.sortBy() !== 'alphabetical') {
+      return false;
+    }
     const list = this.cs.filteredCustomers();
     if (index === 0) return true;
     const prev = list[index - 1];
