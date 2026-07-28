@@ -9,6 +9,19 @@ export interface Visit {
   note: string;
 }
 
+export interface FormulaEntry {
+  id: string;
+  date: Date | string;
+  type: 'roots' | 'lengths' | 'full' | 'toner' | 'bleach' | 'custom';
+  title?: string;
+  formula: string;
+  shades?: string[];
+  developer?: string;
+  ratio?: string;
+  tags?: string[];
+  note?: string;
+}
+
 export interface Customer {
   id?: number;
   name: string;
@@ -18,6 +31,7 @@ export interface Customer {
   lastVisit?: Date;
   tags: string[];
   notes?: string;
+  formulas?: FormulaEntry[];
 }
 
 export class AppDB extends Dexie {
