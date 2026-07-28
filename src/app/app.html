@@ -49,6 +49,10 @@
 
     <!-- ACTION BUTTONS -->
     <div class="flex items-center gap-2 ml-auto md:ml-4">
+      <button (click)="cs.forceReloadDefaultClients()" class="circle-btn border-papi-gold/20 text-papi-gold hover:bg-papi-gold/10 hover:border-papi-gold/40" title="Obnoviť / Importovať zoznam zo salónu (100+ klientov)">
+        <mat-icon class="text-[18px]">sync</mat-icon>
+      </button>
+
       <button (click)="openWipeModal()" class="circle-btn border-red-500/10 text-red-500 hover:bg-red-500/10 hover:border-red-500/40" title="Vymazať celú databázu">
         <mat-icon class="text-[18px]">delete_sweep</mat-icon>
       </button>
@@ -131,7 +135,7 @@
           @if (isFirstOfLetter(customer, i)) {
              <div class="flex items-center gap-4 mt-6 mb-2">
                <div class="text-[#D8B589]/50 text-2xl font-light font-display">
-                 {{ customer.lastName[0] }}
+                 {{ getLetterInitial(customer) }}
                </div>
                <div class="h-[1px] flex-1 bg-gradient-to-r from-white/10 to-transparent"></div>
              </div>
@@ -156,7 +160,7 @@
               <div class="absolute inset-0 bg-gradient-to-r from-[#D8B589]/5 to-transparent pointer-events-none"></div>
             }
 
-            <div class="flex items-center gap-4 relative z-10">
+            <div class="flex items-center gap-4 relative z-10 min-w-0 pr-2">
               <div [class.border-papi-gold]="selectedCustomer()?.id === customer.id"
                    [class.text-papi-gold]="selectedCustomer()?.id === customer.id"
                    [class.border-white/10]="selectedCustomer()?.id !== customer.id"
@@ -164,11 +168,22 @@
                    class="w-11 h-11 rounded-full flex items-center justify-center font-light text-sm border bg-black shrink-0 font-display transition-colors">
                 {{ getInitials(customer) }}
               </div>
-              <div class="flex flex-col select-text select-all">
+              <div class="flex flex-col select-text select-all min-w-0">
                 <h3 [class.text-papi-gold]="selectedCustomer()?.id === customer.id"
                     [class.text-white/90]="selectedCustomer()?.id !== customer.id"
-                    class="text-[15px] font-medium tracking-tight mb-0.5 transition-colors leading-none">{{ customer.name }} {{ customer.lastName }}</h3>
-                <p class="text-white/40 text-[11px] font-light">{{ customer.phone }}</p>
+                    class="text-[15px] font-medium tracking-tight mb-1 transition-colors leading-none truncate">
+                  {{ customer.name }} {{ customer.lastName }}
+                </h3>
+                <div class="flex items-center gap-2 flex-wrap">
+                  @if (customer.phone) {
+                    <span class="text-white/40 text-[11px] font-light">{{ customer.phone }}</span>
+                  }
+                  @if (customer.notes) {
+                    <span class="text-papi-gold/90 bg-papi-gold/10 border border-papi-gold/20 px-2 py-0.5 rounded-md text-[10px] font-mono truncate max-w-[170px] sm:max-w-[240px] md:max-w-[320px]">
+                      {{ customer.notes }}
+                    </span>
+                  }
+                </div>
               </div>
             </div>
             @if (cs.sortBy() === 'mostFrequent') {
@@ -244,6 +259,7 @@
         [visits]="selectedCustomerVisits()"
         (closed)="closeDetail()"
         (save)="onSaveCustomer($event)"
+        (deleteCustomer)="onDeleteCustomer($event)"
         (updateVisitNote)="onUpdateVisitNote($event)"
         (book)="openBookVisit($event)"
         class="flex-1 flex-col overflow-hidden absolute md:relative inset-0 z-20 md:z-auto bg-papi-dark md:bg-transparent">

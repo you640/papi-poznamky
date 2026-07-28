@@ -200,41 +200,161 @@ export class CustomerService {
     }, 100);
   }
 
-  private async seedData() {
-    // Force clear old mock data and set a fresh deployment key
-    if (typeof localStorage !== 'undefined' && !localStorage.getItem('did_clear_everything_except_one_vzor_v4')) {
+  async forceReloadDefaultClients() {
+    await db.customers.clear();
+    await db.visits.clear();
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('dont_reseed_after_wipe');
+      localStorage.setItem('did_seed_hair_clients_v10', 'true');
+    }
+    await this.seedData(true);
+  }
+
+  private async seedData(force = false) {
+    if (typeof localStorage !== 'undefined' && !localStorage.getItem('did_seed_hair_clients_v10')) {
        await db.customers.clear();
        await db.visits.clear();
-       localStorage.setItem('did_clear_everything_except_one_vzor_v4', 'true');
+       localStorage.setItem('did_seed_hair_clients_v10', 'true');
+       force = true;
     }
 
     const count = await db.customers.count();
-    if (count > 0) {
+    if (count > 20 && !force) {
        return;
     }
 
     const initialCustomers: Omit<Customer, 'id'>[] = [
-      { 
-        name: 'Jozef', 
-        lastName: 'Mrkva', 
-        phone: '0911 222 333', 
-        tags: ['VIP', 'Farbenie', 'Brada'], 
-        lastVisit: new Date('2026-06-12T10:00:00Z') 
-      }
+      { name: 'Sofia', lastName: 'Jakubová', phone: '', tags: ['Farbenie'], notes: 'K: 6,1 - 6,14 - 5,00 | D: 7,1 - 6,14' },
+      { name: 'Karin', lastName: 'K.', phone: '', tags: ['Farbenie'], notes: 'K: 6.00 - 7 | D: 7.21' },
+      { name: 'Kimáková', lastName: '', phone: '', tags: ['Medená', 'Farbenie'], notes: 'K: 6 (červená-medená) | NOVÁ: 7 plus 6.34' },
+      { name: 'Simona', lastName: 'Hričková', phone: '', tags: ['Farbenie'], notes: 'Recept: 6.00, 6.1' },
+      { name: 'Michaela', lastName: 'Wolczková', phone: '', tags: ['Farbenie', 'Tónovanie'], notes: 'K: 7.21 | S: 7.21 - 9.21 | D: 9.21' },
+      { name: 'Lívia', lastName: 'Liptajová', phone: '', tags: ['Farbenie'], notes: 'Recept: 3 - 4' },
+      { name: 'V.', lastName: 'Rusnáková', phone: '', tags: ['Farbenie'], notes: 'Recept: 3 - 1,1' },
+      { name: 'Jana', lastName: 'Okarajošová', phone: '', tags: ['Farbenie'], notes: 'Recept: 7.21' },
+      { name: 'Anna', lastName: 'Mačková', phone: '', tags: ['Tónovanie'], notes: 'Tonovačka: 7,21 - 10.22 - 0.11' },
+      { name: 'Peťa', lastName: 'Autoškola', phone: '', tags: ['Farbenie'], notes: 'K: 5-6 green | D: 5.32 green' },
+      { name: 'Forgáčová', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 7 | D: 8.31' },
+      { name: 'Kimáková (variant)', lastName: '', phone: '', tags: ['Farbenie'], notes: 'Recept: 6, 6.4' },
+      { name: 'Alexandra', lastName: 'Olejová', phone: '', tags: ['Farbenie'], notes: 'K: 7,13 | D: 7,13' },
+      { name: 'Hufnagelová', lastName: '', phone: '', tags: ['Tónovanie', 'Blond'], notes: 'Toner: 7,14 + 7,21 (chce svetlejšiu)' },
+      { name: 'Gabriela', lastName: 'Rosič', phone: '0908343587', tags: ['Farbenie'], notes: 'K: 5 + 6,3 kombinovanie s 9,31' },
+      { name: 'Xénia', lastName: '', phone: '', tags: ['Farbenie'], notes: 'Celé vlasy: 7.3, 7.13, trošku 7.00' },
+      { name: 'Halpelka', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 6-7 | D: 7.21' },
+      { name: 'Grančová', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 5.00 + kvapka 1' },
+      { name: 'Medvedová', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 7' },
+      { name: 'Ernstová', lastName: '', phone: '', tags: ['Blond', 'Zosvetľovanie'], notes: 'Recept: 11,02 + 000ss + 12% oxi' },
+      { name: 'Delfíniová', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 5 + 5,3 | D: 6,3' },
+      { name: 'Janka', lastName: 'Karajošová', phone: '', tags: ['Blond', 'Tónovanie'], notes: 'Recept: 10.21 + 9.21' },
+      { name: 'Petrana', lastName: 'Krupášová', phone: '', tags: ['Farbenie'], notes: 'Celé vlasy: 9.1 - 7.21' },
+      { name: 'Lašeníková', lastName: '', phone: '', tags: ['Tónovanie', 'Blond'], notes: 'Ton: 9,00 + 8,2 + 7 + 0,22' },
+      { name: 'Katka', lastName: 'Daňová', phone: '', tags: ['Farbenie'], notes: 'K: 5 | D: 7,32 + 8,31' },
+      { name: 'Vierka', lastName: 'Nováčany', phone: '', tags: ['Farbenie'], notes: 'Celá hlava: 7.00, 6.14' },
+      { name: 'Lenka', lastName: 'Kudelová', phone: '', tags: ['Farbenie'], notes: 'Recept: 5 - 6.15 - green' },
+      { name: 'Nikola', lastName: 'Jarošová', phone: '', tags: ['Farbenie', 'Medená'], notes: 'K: 6.34 | D: 7.34, 9.3 (pôl na pôl)' },
+      { name: 'Kordovánová', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 5 + 6,00 + 6,35 | D: 6,35 + 6,00' },
+      { name: 'Laura', lastName: 'Tigrovaná', phone: '', tags: ['Tmavá'], notes: 'K: 3' },
+      { name: 'Magdaléna', lastName: 'Rusnáková', phone: '', tags: ['Farbenie'], notes: 'K: 7,32 + 6 | D: 7,35' },
+      { name: 'Sandra', lastName: 'Horváthová Kapel', phone: '', tags: ['Farbenie'], notes: 'K: 5 + 5,32 | D: 5,32' },
+      { name: 'Gálová', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 5 | D: 7,32 + 8,31' },
+      { name: 'Mariana', lastName: 'Mačáková', phone: '', tags: ['Farbenie'], notes: 'K: 4 (3% oxidant) | Tonovačka: -3' },
+      { name: 'Lucia', lastName: 'Kramarčíková', phone: '', tags: ['Farbenie'], notes: 'Celé vlasy: 5 (30g) + 5.1 (10g) + 3 (10g)' },
+      { name: 'Viera', lastName: 'Kurucová', phone: '', tags: ['Blond'], notes: 'Recept: 9.3' },
+      { name: 'Lívia', lastName: 'Kučeravá', phone: '', tags: ['Blond', 'Zosvetľovanie'], notes: 'Recept: 11,21 (25g) + 11 (10g) + 7,21 (5g)' },
+      { name: 'Matisová', lastName: '', phone: '0915962676', tags: ['Tmavá'], notes: 'K: 3' },
+      { name: 'Natália', lastName: 'Szetmerová', phone: '', tags: ['Farbenie'], notes: 'K: 4 | D: 7,4 + 5,17' },
+      { name: 'Zuzka', lastName: 'Gumanová', phone: '', tags: ['Farbenie'], notes: 'Recept: 6 + 6,1 + 5 + Green + 0,02' },
+      { name: 'Gumanová', lastName: 'Mama', phone: '', tags: ['Blond', 'Tónovanie'], notes: 'Recept: 10,21 (20g) + 10,1 (5g) + 0,11 (5g)' },
+      { name: 'Daniela', lastName: 'Michalíková', phone: '', tags: ['Farbenie'], notes: 'K: 5' },
+      { name: 'Medvedová', lastName: '(7.31)', phone: '', tags: ['Farbenie'], notes: 'K: 7,31' },
+      { name: 'Ondrušová', lastName: '', phone: '', tags: ['Blond'], notes: 'K: 6,00 | D: 11,02 + 11,31' },
+      { name: 'Paťa', lastName: 'Alex', phone: '', tags: ['Farbenie'], notes: 'K: 5,1 | D: 6,1' },
+      { name: 'Goliašová', lastName: '', phone: '', tags: ['Tmavá'], notes: 'K: 4' },
+      { name: 'Zuzka', lastName: 'Zákaz', phone: '', tags: ['Blond', 'Tónovanie'], notes: 'D: 9,21' },
+      { name: 'Nika', lastName: 'Spišská', phone: '', tags: ['Farbenie'], notes: 'K: 4-5 | D: 6-6,1' },
+      { name: 'Suseda', lastName: 'Nováčany', phone: '', tags: ['Farbenie'], notes: 'K: 7,8 + 5 | D: 7,18' },
+      { name: 'Čisláková', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 5,4 - 0,5 | D: 8 - 0,5' },
+      { name: 'Tokárová', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 4 | D: 6,1' },
+      { name: 'Jarek', lastName: 'Mama', phone: '', tags: ['Blond'], notes: 'K: 9,3' },
+      { name: 'Nalevanková', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 4 | D: 6,14 - 6,3' },
+      { name: 'Silvia', lastName: 'Mangerová', phone: '', tags: ['Farbenie'], notes: 'K-D: 6 + 7,1' },
+      { name: 'Anička', lastName: 'Hreňová', phone: '', tags: ['Farbenie'], notes: 'Recept: 8,13 + KVAPKA 8' },
+      { name: 'Huská', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 7 + 8,13 | D: 8,13' },
+      { name: 'Jana', lastName: 'Kovalčíková', phone: '', tags: ['Farbenie'], notes: 'K: 4 | D: 6,5' },
+      { name: 'Kačička', lastName: 'Mama', phone: '', tags: ['Blond', 'Melír'], notes: 'Recept: 10,21 | Melír 12%' },
+      { name: 'Mama Flip', lastName: 'Duda', phone: '', tags: ['Farbenie'], notes: 'K: 6,14 + 6 | D: 7,21' },
+      { name: 'Grancová', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 4' },
+      { name: 'Anička', lastName: '', phone: '', tags: ['Blond'], notes: 'K: 8,13 + 8 (9%) | D: 9,13 (3%) | NOVÁ: 9,21 + 8,1' },
+      { name: 'Saša', lastName: 'Jaja', phone: '', tags: ['Blond'], notes: 'K: 9,1' },
+      { name: 'Winkelnesová', lastName: '', phone: '', tags: ['Blond'], notes: 'K: 4-5 | D: 9,21 (10g) + 10,21 (20g) + 11,02 (20g)' },
+      { name: 'Daniela', lastName: 'Jarošová', phone: '', tags: ['Tónovanie', 'Blond'], notes: 'Tonovačka: 11,02 (20g) + 4,00 (5g) + 10,1 (5g)' },
+      { name: 'Janka', lastName: 'Vogue', phone: '', tags: ['Farbenie', 'Tónovanie'], notes: 'K: 6 + 0,22 | D: 9,2 + 7 | Konce: 10,21 + 7,21' },
+      { name: 'Zubárka', lastName: 'Kremeňová', phone: '', tags: ['Farbenie'], notes: 'K: 3 + 4 | D: 7,32 + 6,1' },
+      { name: 'Ingrid', lastName: 'Jutková', phone: '', tags: ['Farbenie'], notes: 'K: 4 + 5 | D: 5' },
+      { name: 'Laura', lastName: 'Reklamka', phone: '', tags: ['Farbenie'], notes: 'K: 5 | D: 7,1' },
+      { name: 'Zakarová', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 5,14 | D: 6,14 | NOVÁ: K: 5 + 6,1, D: 6 (30g) + 6,1 (10g)' },
+      { name: 'Ungvarská', lastName: '', phone: '', tags: ['Šediny', 'Blond'], notes: '60% šediny | K: 9 + 9,21 (9%)' },
+      { name: 'Zubárka', lastName: 'Dcéra', phone: '', tags: ['Farbenie'], notes: 'Celá hlava: 4 + 5,1' },
+      { name: 'Kováčová', lastName: '', phone: '0918363903', tags: ['Šediny'], notes: 'Recept: 9,2 + 9 (šedivé), Predpigmentácia 10 !Korienky Jul 2024: K: 6.00!' },
+      { name: 'Zuzuličová', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 5,32 + 6 | D: 8,32 + 8,2' },
+      { name: 'Michaela', lastName: 'Brost', phone: '', tags: ['Farbenie'], notes: 'Celá hlava: 6,3 + 6,35 (Nová Farba)' },
+      { name: 'Veronica', lastName: 'Gonošová', phone: '', tags: ['Farbenie'], notes: 'K: 6,14 + 6,32' },
+      { name: 'Ukrajinka', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 6,2 + 6 | D: 6,14' },
+      { name: 'Hladíková', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 5 | D: 7,13 + 6,00' },
+      { name: 'Miklošová', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 6 + 7,14' },
+      { name: 'Čorňáková', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 5 + 7,1 | D: 9,13 + 9,1 + 5g + 0,11' },
+      { name: 'Claudia', lastName: 'Orosová', phone: '', tags: ['Tmavá'], notes: 'Recept: 4 + 4,32 + kvapka 5 (3%)' },
+      { name: 'Martina', lastName: 'Kyovská', phone: '', tags: ['Farbenie'], notes: 'K: 6,32' },
+      { name: 'Eniko', lastName: '', phone: '', tags: ['Farbenie'], notes: 'Recept: 7,00 + 6,1' },
+      { name: 'Lenka', lastName: 'Pustajová', phone: '', tags: ['Farbenie'], notes: 'K: 3 (stiahnuť do polovice) | D: 6' },
+      { name: 'Peťa', lastName: 'Vodičák', phone: '', tags: ['Blond'], notes: 'K: 8 + 8,2 | D: 9,2' },
+      { name: 'Katka', lastName: 'Buratti', phone: '', tags: ['Farbenie'], notes: 'K: 6,14 + 6 | D: 7,14' },
+      { name: 'Janka', lastName: 'ANJ', phone: '', tags: ['Blond'], notes: 'K: 9,2 + 9,00 (1:1, 9%)' },
+      { name: 'Blažka', lastName: 'Cibulová', phone: '', tags: ['Farbenie'], notes: 'K: 3 | D: 5 + 5,1' },
+      { name: 'Dudová', lastName: 'Mama', phone: '', tags: ['Farbenie'], notes: 'K: 6,1 + 7,1 + 6 | D: 8 + š + 8,2' },
+      { name: 'Valentová', lastName: '', phone: '0908097361', tags: ['Farbenie'], notes: 'K: 6.00 | D: 7,1' },
+      { name: 'Filičková', lastName: '', phone: '', tags: ['Farbenie', 'Medená'], notes: 'K: 7,31 + 6 (Permanentne) | D: 8,31 + 0,44 kvapka | NOVÁ: 7.31 (20g) + 6 (10g) + 0.44 kvapka (odrasty leto)' },
+      { name: 'Šokyrová', lastName: '', phone: '', tags: ['Farbenie'], notes: 'Recept: 6,35' },
+      { name: 'Bianka', lastName: 'Rujaková', phone: '', tags: ['Medená'], notes: 'K-D: 7,4' },
+      { name: 'Lucia', lastName: 'Jurková', phone: '', tags: ['Farbenie'], notes: 'K: 5,00 | D: 7,13' },
+      { name: 'Pechová', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 7,21 + 6 | D: 8,2 + 7' },
+      { name: 'Marhefková', lastName: '', phone: '', tags: ['Tmavá'], notes: 'K: 4 + 4,32 | D: 4 + 4,32' },
+      { name: 'Janka', lastName: 'Šmaterová', phone: '', tags: ['Farbenie'], notes: 'Recept: 6 + 7,2 + 7,14' },
+      { name: 'Zuzana', lastName: 'Landan', phone: '', tags: ['Farbenie'], notes: 'K: 6,1 | D: 7-6' },
+      { name: 'Galina', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 6 + 7,3 | D: 9,31 + 8' },
+      { name: 'Miriam', lastName: 'Šolcová', phone: '', tags: ['Farbenie'], notes: 'K: 7,21 (viac) + 7' },
+      { name: 'Naty', lastName: 'Mydlo', phone: '', tags: ['Farbenie'], notes: 'Recept: 7,21 | K: 6,00 + 7,21' },
+      { name: 'Bezáková', lastName: '', phone: '', tags: ['Blond', 'Zosvetľovanie'], notes: 'K: 11,00 + 11,02 | D: teplé + 12%' },
+      { name: 'Jarka', lastName: 'Magnesová', phone: '', tags: ['Farbenie'], notes: 'K: 5,32 | D: 6,35' },
+      { name: 'Radka', lastName: 'Siváková', phone: '', tags: ['Farbenie'], notes: 'Recept: 7,21' },
+      { name: 'Teta', lastName: 'Borša', phone: '', tags: ['Farbenie'], notes: 'K: 5 + 4,22 | Okolo tváre: 6,22 | Stred: 7,2' },
+      { name: 'Sali', lastName: '', phone: '', tags: ['Farbenie'], notes: '7g - 4, 3 - 5,1 (3%)' },
+      { name: 'Janka', lastName: 'Špkirová', phone: '', tags: ['Farbenie'], notes: 'K: 5,00 | D: 9,21' },
+      { name: 'Nikola', lastName: 'Grančová', phone: '', tags: ['Tmavá'], notes: 'Celá hlava: 3 + 4 + 6,11 (trošku)' },
+      { name: 'Lýdia', lastName: 'Sajková', phone: '', tags: ['Farbenie'], notes: 'K: 6,00 | D: 7,14' },
+      { name: 'Jana', lastName: 'Sučková', phone: '', tags: ['Farbenie'], notes: 'K: 3 + 4 (pôl na pôl) | D: 5,32 (10g) + 6,32 (30g)' },
+      { name: 'Simona', lastName: 'Broóková', phone: '', tags: ['Farbenie'], notes: 'Celá hlava: 5,1' },
+      { name: 'Viky', lastName: 'Medvedová', phone: '', tags: ['Farbenie'], notes: 'Celá hlava: 8,13' },
+      { name: 'Pravdová', lastName: '', phone: '', tags: ['Medená'], notes: 'K: 7,4 + kvapka 6,34 | D: 7.34' },
+      { name: 'Adriana', lastName: 'Tomči', phone: '', tags: ['Blond'], notes: 'Recept: 10,31' },
+      { name: 'Nikola', lastName: 'Heribanová', phone: '', tags: ['Medená'], notes: 'K: 8 - 8,4 | D: 8,4' },
+      { name: 'Miška', lastName: 'Petroci', phone: '', tags: ['Farbenie'], notes: 'Recept: 6,1 - 7,31 - Green - 6' },
+      { name: 'Gashi Danalo', lastName: 'Mama', phone: '', tags: ['Farbenie'], notes: 'K: 8.31' },
+      { name: 'Dominika', lastName: 'Žigová', phone: '', tags: ['Farbenie'], notes: 'K: 6 - 7 - 7,14 (10:10:10) | D: 7.14' },
+      { name: 'Nikola', lastName: 'Galošová', phone: '', tags: ['Farbenie'], notes: 'Celá hlava: 5 - 5,1' },
+      { name: 'Lenka', lastName: 'Eštuová', phone: '', tags: ['Farbenie'], notes: 'K: 7.4 - 7 - trošku 6 | D: 7 - 7.31' },
+      { name: 'Mia', lastName: 'Lašeníková', phone: '', tags: ['Farbenie'], notes: 'K: 6.3 | D: 8.32' },
+      { name: 'Michaela', lastName: 'Ručkárová', phone: '', tags: ['Farbenie'], notes: 'K: 6,1 | D: 7.21' },
+      { name: 'Svetluška', lastName: '', phone: '', tags: ['Tmavá'], notes: 'K: 3' },
+      { name: 'Martinka', lastName: 'Susede', phone: '', tags: ['Farbenie'], notes: 'K: 6 | Vyčistiť dĺžky' },
+      { name: 'VENOM', lastName: '', phone: '', tags: ['Blond'], notes: 'Recept: 9,1 + 9,21' },
+      { name: 'Izabela', lastName: 'Beriová', phone: '', tags: ['Melír', 'Farbenie'], notes: 'Recept: 5.1 + 00 + 6.1 (melír stmavovanie)' },
+      { name: 'Laura', lastName: 'Galérka', phone: '', tags: ['Farbenie'], notes: 'K: 6,00 | D: 6,1' },
+      { name: 'Kostelníková', lastName: '', phone: '0915442655', tags: [], notes: '' }
     ];
 
     for (const c of initialCustomers) {
-      const id = await this.addCustomer(c);
-      // Add one default visit
-      if (c.lastVisit) {
-        await this.addVisit({
-          customerId: id,
-          date: c.lastVisit,
-          service: 'Strih + Farbenie + Brada',
-          price: 35,
-          note: 'Prvotriedny servis, upravená brada a svieža farba podľa požiadaviek.'
-        });
-      }
+      await this.addCustomer(c);
     }
   }
 }

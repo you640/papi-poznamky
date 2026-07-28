@@ -1,68 +1,242 @@
 <section class="flex-1 bg-papi-gray/10 flex flex-col p-4 md:p-8 overflow-y-auto custom-scrollbar relative select-none h-full">
-  <!-- Top Navigation Bar (Sleek Mobile App Header) -->
-  <div class="w-full flex justify-between items-center md:hidden mb-4 shrink-0">
+  @let c = customer();
+
+  <!-- Top Navigation Bar -->
+  <div class="w-full flex justify-between items-center mb-4 shrink-0">
     <button (click)="closed.emit()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-white hover:border-papi-gold/50 transition-all text-xs font-medium backdrop-blur-md">
       <mat-icon class="text-[16px] w-[16px] h-[16px] flex items-center justify-center">arrow_back</mat-icon>
       <span>Späť</span>
     </button>
-  </div>
 
-  <div class="hidden md:flex justify-end mb-4 shrink-0 w-full">
-     <button (click)="closed.emit()" class="circle-btn">
-        <mat-icon class="text-[18px]">close</mat-icon>
-       </button>
-  </div>
+    <div class="flex items-center gap-2">
+      <button 
+        (click)="toggleEdit()" 
+        [class.bg-papi-gold/20]="isEditing()"
+        [class.text-papi-gold]="isEditing()"
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 hover:border-papi-gold/50 text-white transition-all text-xs font-medium backdrop-blur-md">
+        <mat-icon class="text-[16px] w-[16px] h-[16px] flex items-center justify-center">{{ isEditing() ? 'close' : 'edit' }}</mat-icon>
+        <span>{{ isEditing() ? 'Zrušiť úpravu' : 'Upraviť profil' }}</span>
+      </button>
 
-  <!-- Detail Header (Minimalistic as requested) -->
-  <div class="flex flex-col items-center text-center min-w-0 shrink-0 slide-in-from-top-4 duration-[800ms] ease-out animate-in fade-in relative z-10 w-full mb-6">
-    @let c = customer();
-
-    <!-- Luxurious Avatar -->
-    <div class="mx-auto w-20 h-20 md:w-[110px] md:h-[110px] rounded-full border border-papi-gold/20 p-[2px] mb-4 shadow-[0_0_30px_rgba(216,181,137,0.12)] relative">
-      <div class="w-full h-full bg-[#0d0d0e] rounded-full flex items-center justify-center text-papi-gold text-[2.2rem] md:text-[3rem] font-light font-display">
-        {{ getInitials(c) }}
-      </div>
-      <div class="absolute -bottom-0.5 -right-0.5 w-6 h-6 md:w-8 md:h-8 rounded-full bg-papi-gold flex items-center justify-center text-black shadow-lg">
-        <mat-icon class="text-[12px] md:text-[16px] flex items-center justify-center">verified</mat-icon>
-      </div>
-    </div>
-    
-    <h1 class="text-[1.8rem] md:text-[2.6rem] font-display text-white truncate tracking-tight w-full mb-1 select-text select-all">{{ c.name }} <span class="font-normal">{{ c.lastName }}</span></h1>
-    
-    <div class="h-[1px] w-12 bg-gradient-to-r from-transparent via-papi-gold/40 to-transparent my-3 mx-auto"></div>
-    
-    <div class="flex flex-col md:flex-row items-center gap-3 md:gap-6 text-[14px] font-light text-white/50 tracking-wide">
-      <span class="flex items-center gap-2 hover:text-papi-gold transition-colors cursor-pointer group select-text select-all">
-        <mat-icon class="text-[18px] text-papi-gold/70 group-hover:text-papi-gold">phone_iphone</mat-icon> {{ c.phone }}
-      </span>
-      @if (c.email) {
-        <span class="flex items-center gap-2 truncate hover:text-papi-gold transition-colors cursor-pointer group select-text select-all">
-          <mat-icon class="text-[18px] text-papi-gold/70 group-hover:text-papi-gold shrink-0">mail</mat-icon> <span class="truncate">{{ c.email }}</span>
-        </span>
-      } @else {
-        <span class="flex items-center gap-2 opacity-40 italic">
-          <mat-icon class="text-[16px]">mail</mat-icon> Bez e-mailu
-        </span>
-      }
+      <button 
+        (click)="isDeleteConfirmOpen.set(true)" 
+        class="flex items-center justify-center p-2 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-all text-xs"
+        title="Vymazať klienta">
+        <mat-icon class="text-[16px] w-[16px] h-[16px] flex items-center justify-center">delete</mat-icon>
+      </button>
     </div>
   </div>
 
-  <!-- Note taking area (Symmetrical and Adaptive Height) -->
-  <div class="flex-1 flex flex-col border-t border-white/5 pt-6 w-full animate-in fade-in slide-in-from-bottom-8 duration-700">
-     <div class="flex items-center justify-between mb-3 shrink-0">
-        <div class="text-[10px] text-papi-gold opacity-80 uppercase tracking-widest font-semibold flex items-center gap-2">
-            <mat-icon class="text-[16px]">edit_note</mat-icon> Interná klientská karta
+  @if (isEditing()) {
+    <!-- EDIT MODE FORM -->
+    <div class="bg-[#111112]/90 border border-papi-gold/30 rounded-3xl p-5 md:p-6 shadow-2xl flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200 mb-6 backdrop-blur-md">
+      <div class="flex items-center gap-2 text-papi-gold text-xs uppercase tracking-widest font-semibold pb-2 border-b border-white/10">
+        <mat-icon class="text-[18px]">manage_accounts</mat-icon> Úprava údajov klienta
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label for="editCustName" class="text-[10px] text-gray-400 uppercase font-bold ml-1 mb-1 block">Meno *</label>
+          <input 
+            id="editCustName"
+            [(ngModel)]="editName" 
+            class="w-full bg-papi-gray/60 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-papi-gold/60 select-text" 
+            placeholder="Meno">
         </div>
-     </div>
-     
-     <!-- Massive Textarea -->
-     <textarea 
-      [(ngModel)]="editNotes"
-      class="w-full min-h-[180px] md:flex-1 bg-[#111112]/80 border border-white/10 rounded-2xl p-4 text-white/90 focus:outline-none focus:border-papi-gold/50 focus:ring-1 focus:ring-papi-gold/20 transition-all font-sans text-[14px] leading-relaxed custom-scrollbar resize-none backdrop-blur-md shadow-inner select-text mb-6"
-      placeholder="Miesto pre dôležité záznamy, preferencie, typ farby alebo iné poznámky..."></textarea>
+
+        <div>
+          <label for="editCustLastName" class="text-[10px] text-gray-400 uppercase font-bold ml-1 mb-1 block">Priezvisko *</label>
+          <input 
+            id="editCustLastName"
+            [(ngModel)]="editLastName" 
+            class="w-full bg-papi-gray/60 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-papi-gold/60 select-text" 
+            placeholder="Priezvisko">
+        </div>
+
+        <div>
+          <label for="editCustPhone" class="text-[10px] text-gray-400 uppercase font-bold ml-1 mb-1 block">Telefón</label>
+          <input 
+            id="editCustPhone"
+            [(ngModel)]="editPhone" 
+            class="w-full bg-papi-gray/60 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-papi-gold/60 select-text" 
+            placeholder="+421 9xx xxx xxx">
+        </div>
+
+        <div>
+          <label for="editCustEmail" class="text-[10px] text-gray-400 uppercase font-bold ml-1 mb-1 block">E-mail</label>
+          <input 
+            id="editCustEmail"
+            [(ngModel)]="editEmail" 
+            class="w-full bg-papi-gray/60 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-papi-gold/60 select-text" 
+            placeholder="klient@email.sk">
+        </div>
+      </div>
+
+      <div>
+        <label for="editCustTags" class="text-[10px] text-gray-400 uppercase font-bold ml-1 mb-1 block">Tagy / Značky (oddelené čiarkou)</label>
+        <input 
+          id="editCustTags"
+          [(ngModel)]="editTags" 
+          class="w-full bg-papi-gray/60 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-papi-gold/60 select-text" 
+          placeholder="VIP, Farbenie, Brada">
+      </div>
+
+      <div>
+        <label for="editCustNotes" class="text-[10px] text-gray-400 uppercase font-bold ml-1 mb-1 block">Interná klientská karta / Poznámky</label>
+        <textarea 
+          id="editCustNotes"
+          [(ngModel)]="editNotes" 
+          rows="4" 
+          class="w-full bg-papi-gray/60 border border-white/10 rounded-xl p-4 text-white text-sm outline-none focus:border-papi-gold/60 select-text resize-none custom-scrollbar" 
+          placeholder="Miesto pre dôležité záznamy, preferencie..."></textarea>
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button 
+          (click)="saveChanges()" 
+          class="flex-1 bg-gradient-to-r from-[#D8B589] to-[#EFDBC2] hover:opacity-90 text-black font-semibold py-3 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 text-xs uppercase tracking-wider">
+          <mat-icon class="text-[18px]">check</mat-icon> Uložiť zmeny
+        </button>
+        <button 
+          (click)="cancelEdit()" 
+          class="px-5 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 font-medium py-3 rounded-xl transition-all text-xs uppercase tracking-wider">
+          Zrušiť
+        </button>
+      </div>
+    </div>
+  } @else {
+    <!-- DISPLAY MODE HEADER -->
+    <div class="flex flex-col items-center text-center min-w-0 shrink-0 slide-in-from-top-4 duration-[800ms] ease-out animate-in fade-in relative z-10 w-full mb-6">
+      <!-- Avatar -->
+      <div class="mx-auto w-20 h-20 md:w-[110px] md:h-[110px] rounded-full border border-papi-gold/20 p-[2px] mb-4 shadow-[0_0_30px_rgba(216,181,137,0.12)] relative">
+        <div class="w-full h-full bg-[#0d0d0e] rounded-full flex items-center justify-center text-papi-gold text-[2.2rem] md:text-[3rem] font-light font-display">
+          {{ getInitials(c) }}
+        </div>
+        <div class="absolute -bottom-0.5 -right-0.5 w-6 h-6 md:w-8 md:h-8 rounded-full bg-papi-gold flex items-center justify-center text-black shadow-lg">
+          <mat-icon class="text-[12px] md:text-[16px] flex items-center justify-center">verified</mat-icon>
+        </div>
+      </div>
       
-     <button (click)="saveChanges()" class="shrink-0 w-full bg-gradient-to-r from-[#D8B589] to-[#EFDBC2] hover:opacity-90 text-black font-semibold tracking-wide py-4.5 rounded-2xl transition-all shadow-[0_4px_20px_rgba(216,181,137,0.2)] flex items-center justify-center gap-2 active:scale-[0.98] mb-4">
-       <mat-icon class="text-[20px]">save</mat-icon> ULOŽIŤ DO SYSTÉMU
-     </button>
-  </div>
+      <h1 class="text-[1.8rem] md:text-[2.6rem] font-display text-white truncate tracking-tight w-full mb-1 select-text select-all">
+        {{ c.name }} <span class="font-normal">{{ c.lastName }}</span>
+      </h1>
+      
+      <!-- Tags Badges -->
+      @if (c.tags && c.tags.length > 0) {
+        <div class="flex flex-wrap items-center justify-center gap-1.5 my-2">
+          @for (tag of c.tags; track tag) {
+            <span class="px-2.5 py-0.5 rounded-full bg-papi-gold/10 border border-papi-gold/20 text-papi-gold text-[10px] font-medium uppercase tracking-wider">
+              {{ tag }}
+            </span>
+          }
+        </div>
+      }
+
+      <div class="h-[1px] w-12 bg-gradient-to-r from-transparent via-papi-gold/40 to-transparent my-3 mx-auto"></div>
+      
+      <div class="flex flex-col md:flex-row items-center gap-3 md:gap-6 text-[14px] font-light text-white/50 tracking-wide">
+        @if (c.phone) {
+          <a [href]="'tel:' + c.phone" class="flex items-center gap-2 hover:text-papi-gold transition-colors group select-text">
+            <mat-icon class="text-[18px] text-papi-gold/70 group-hover:text-papi-gold">phone_iphone</mat-icon> {{ c.phone }}
+          </a>
+        } @else {
+          <span class="flex items-center gap-2 opacity-40 italic">
+            <mat-icon class="text-[16px]">phone_disabled</mat-icon> Bez telefónu
+          </span>
+        }
+
+        @if (c.email) {
+          <a [href]="'mailto:' + c.email" class="flex items-center gap-2 truncate hover:text-papi-gold transition-colors group select-text">
+            <mat-icon class="text-[18px] text-papi-gold/70 group-hover:text-papi-gold shrink-0">mail</mat-icon> <span class="truncate">{{ c.email }}</span>
+          </a>
+        } @else {
+          <span class="flex items-center gap-2 opacity-40 italic">
+            <mat-icon class="text-[16px]">mail</mat-icon> Bez e-mailu
+          </span>
+        }
+      </div>
+    </div>
+
+    <!-- Visual Color Formula Card -->
+    @if (parsedFormulaParts.length > 0) {
+      <div class="mb-6 p-4 rounded-2xl bg-[#151517] border border-papi-gold/30 shadow-xl animate-in fade-in slide-in-from-top-2 duration-300">
+        <div class="text-[11px] text-papi-gold uppercase tracking-widest font-bold flex items-center gap-2 mb-3 pb-2 border-b border-white/10">
+          <mat-icon class="text-[18px]">palette</mat-icon> Farebná Receptúra Klienta
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          @for (part of parsedFormulaParts; track part.original) {
+            <div [class.border-amber-500\/40]="part.type === 'roots'"
+                 [class.bg-amber-500\/10]="part.type === 'roots'"
+                 [class.border-rose-500\/40]="part.type === 'lengths'"
+                 [class.bg-rose-500\/10]="part.type === 'lengths'"
+                 [class.border-cyan-500\/40]="part.type === 'middle'"
+                 [class.bg-cyan-500\/10]="part.type === 'middle'"
+                 [class.border-emerald-500\/40]="part.type === 'new'"
+                 [class.bg-emerald-500\/10]="part.type === 'new'"
+                 [class.border-papi-gold\/30]="part.type === 'general'"
+                 [class.bg-papi-gold\/5]="part.type === 'general'"
+                 class="p-3 rounded-xl border flex flex-col gap-1 transition-all">
+              <div class="text-[10px] uppercase font-bold tracking-wider flex items-center gap-1.5"
+                   [class.text-amber-400]="part.type === 'roots'"
+                   [class.text-rose-400]="part.type === 'lengths'"
+                   [class.text-cyan-400]="part.type === 'middle'"
+                   [class.text-emerald-400]="part.type === 'new'"
+                   [class.text-papi-gold]="part.type === 'general'">
+                <mat-icon class="text-[14px]">
+                  {{ part.type === 'roots' ? 'content_cut' : part.type === 'lengths' ? 'auto_awesome' : part.type === 'new' ? 'fiber_new' : 'invert_colors' }}
+                </mat-icon>
+                {{ part.title }}
+              </div>
+              <div class="text-[13px] font-mono font-medium text-white select-text select-all tracking-wide">
+                {{ part.content }}
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Note taking area -->
+    <div class="flex-1 flex flex-col border-t border-white/5 pt-6 w-full animate-in fade-in slide-in-from-bottom-8 duration-700">
+      <div class="flex items-center justify-between mb-3 shrink-0">
+          <div class="text-[10px] text-papi-gold opacity-80 uppercase tracking-widest font-semibold flex items-center gap-2">
+              <mat-icon class="text-[16px]">edit_note</mat-icon> Úprava internej karty / Poznámok
+          </div>
+      </div>
+       
+      <textarea 
+        id="editCustNotesDetail"
+        [(ngModel)]="editNotes"
+        class="w-full min-h-[140px] md:flex-1 bg-[#111112]/80 border border-white/10 rounded-2xl p-4 text-white/90 focus:outline-none focus:border-papi-gold/50 focus:ring-1 focus:ring-papi-gold/20 transition-all font-sans text-[14px] leading-relaxed custom-scrollbar resize-none backdrop-blur-md shadow-inner select-text mb-4"
+        placeholder="Miesto pre dôležité záznamy, preferencie, typ farby alebo iné poznámky..."></textarea>
+        
+      <button (click)="saveChanges()" class="shrink-0 w-full bg-gradient-to-r from-[#D8B589] to-[#EFDBC2] hover:opacity-90 text-black font-semibold tracking-wide py-4 rounded-2xl transition-all shadow-[0_4px_20px_rgba(216,181,137,0.2)] flex items-center justify-center gap-2 active:scale-[0.98] mb-4">
+        <mat-icon class="text-[20px]">save</mat-icon> ULOŽIŤ DO SYSTÉMU
+      </button>
+    </div>
+  }
+
+  <!-- Delete Confirmation Modal -->
+  @if (isDeleteConfirmOpen()) {
+    <div class="fixed inset-0 z-[150] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
+      <div class="bg-[#111112] border border-red-500/30 rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl flex flex-col items-center">
+        <div class="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mb-4">
+          <mat-icon class="text-[28px]">person_remove</mat-icon>
+        </div>
+        <h3 class="text-white text-lg font-bold font-display mb-2">Vymazať klienta?</h3>
+        <p class="text-white/60 text-xs mb-6 leading-relaxed">
+          Naozaj chcete vymazať klienta <span class="text-white font-semibold">{{ c.name }} {{ c.lastName }}</span>? Túto akciu nie je možné vrátiť späť.
+        </p>
+        <div class="flex gap-3 w-full">
+          <button (click)="confirmDelete()" class="flex-1 bg-red-600 hover:bg-red-500 text-white font-semibold py-3 rounded-xl text-xs uppercase tracking-wider transition-all">
+            Vymazať
+          </button>
+          <button (click)="isDeleteConfirmOpen.set(false)" class="flex-1 bg-white/5 hover:bg-white/10 text-gray-300 font-medium py-3 rounded-xl text-xs uppercase tracking-wider border border-white/10 transition-all">
+            Zrušiť
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 </section>
+

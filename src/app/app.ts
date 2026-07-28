@@ -5,7 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { CustomerService } from './customer.service';
 import { CustomerDetailComponent } from './customer-detail';
 import { CalendarViewComponent } from './calendar-view';
-import type { Customer, Visit } from './db';
+import { db, type Customer, type Visit } from './db';
 import { animate, stagger } from 'motion';
 
 @Component({
@@ -219,16 +219,25 @@ export class App {
     this.selectedCustomerVisits.set([]);
   }
 
-  async onSaveCustomer(data: { id: number, phone: string, notes: string }) {
+  async onSaveCustomer(data: { id: number, name: string, lastName: string, phone: string, email: string, tags: string[], notes: string }) {
     await this.cs.updateCustomer(data.id, { 
+      name: data.name,
+      lastName: data.lastName,
       phone: data.phone, 
+      email: data.email,
+      tags: data.tags,
       notes: data.notes 
     });
     // Refresh selected customer to show changes
-    const updated = this.cs.filteredCustomers().find(c => c.id === data.id);
+    const updated = await db.customers.get(data.id);
     if (updated) {
       this.selectedCustomer.set(updated);
     }
+  }
+
+  async onDeleteCustomer(customerId: number) {
+    await this.cs.deleteCustomer(customerId);
+    this.closeDetail();
   }
 
   async onUpdateVisitNote(data: { id: number, note: string }) {
@@ -240,6 +249,16 @@ export class App {
     }
   }
 
+  getLetterInitial(customer: Customer): string {
+    if (customer.lastName && customer.lastName.trim()) {
+      return customer.lastName.trim()[0].toUpperCase();
+    }
+    if (customer.name && customer.name.trim()) {
+      return customer.name.trim()[0].toUpperCase();
+    }
+    return '#';
+  }
+
   isFirstOfLetter(customer: Customer, index: number): boolean {
     if (this.cs.sortBy() !== 'alphabetical') {
       return false;
@@ -248,16 +267,23 @@ export class App {
     if (index === 0) return true;
     const prev = list[index - 1];
     
-    const currentInitial = customer.lastName?.[0]?.toUpperCase() || '#';
-    const prevInitial = prev.lastName?.[0]?.toUpperCase() || '#';
+    const currentInitial = this.getLetterInitial(customer);
+    const prevInitial = this.getLetterInitial(prev);
     
     return currentInitial !== prevInitial;
   }
 
   getInitials(c: Customer) {
-    const first = c.name?.[0] || '?';
-    const last = c.lastName?.[0] || '?';
-    return `${first}${last}`.toUpperCase();
+    if (!c) return '??';
+    const first = c.name?.trim()?.[0] || '';
+    const last = c.lastName?.trim()?.[0] || '';
+    if (first && last) {
+      return `${first}${last}`.toUpperCase();
+    }
+    if (first) {
+      return c.name.trim().slice(0, 2).toUpperCase();
+    }
+    return '??';
   }
 
   // --- MODALS ALJA LOGIC ---
