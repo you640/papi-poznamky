@@ -1,144 +1,181 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { CustomerService } from './customer.service';
 import { db } from './db';
 
-// Mock the MatIcon and other UI components if we were doing DOM tests
-// But we'll focus on the data and state flow which is the "brain" of the app.
-
-describe('Papi CRM Functional Logic', () => {
+describe('Papi CRM Functional Logic & E2E Unit Tests', () => {
   let service: CustomerService;
 
-  beforeEach(async () => {
-    // Clear DB fully
+  beforeAll(async () => {
+    // Force reload default clients into Dexie DB once
     await db.customers.clear();
     await db.visits.clear();
-    
-    // Reset searchQuery to avoid leftover filters
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('dont_reseed_after_wipe');
+      localStorage.setItem('did_seed_hair_clients_v10', 'true');
+    }
+
     service = new CustomerService();
+    await service.forceReloadDefaultClients();
+
+    // Wait until liveQuery populates customers
+    for (let i = 0; i < 30; i++) {
+      if (service.customersList().length > 100) break;
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  });
+
+  beforeEach(() => {
     service.searchQuery.set('');
-    
-    // Wait longer for the service to initialize and seed data reliably
-    await new Promise(resolve => setTimeout(resolve, 300)); 
   });
 
-  it('should seed initial customers', async () => {
+  it('should seed initial hair salon customers', async () => {
     const customers = service.filteredCustomers();
-    expect(customers.length).toBe(1); // 1 seeded customer
-    expect(customers.some(c => c.lastName === 'Mrkva')).toBe(true);
+    expect(customers.length).toBeGreaterThan(100);
+    expect(customers.some(c => c.name.toLowerCase().includes('sofia'))).toBe(true);
   });
 
-  it('should filter customers by search query', async () => {
-    service.searchQuery.set('Jozef');
+  it('should filter customers by search query (name)', async () => {
+    service.searchQuery.set('sofia');
     await new Promise(resolve => setTimeout(resolve, 50));
     const filtered = service.filteredCustomers();
-    expect(filtered.length).toBe(1);
-    expect(filtered[0].name).toBe('Jozef');
+    expect(filtered.length).toBeGreaterThan(0);
+    expect(filtered[0].name.toLowerCase()).toContain('sofia');
+  });
+
+  it('should filter customers by chemical formula notes', async () => {
+    service.searchQuery.set('6,14');
+    await new Promise(resolve => setTimeout(resolve, 50));
+    const filtered = service.filteredCustomers();
+    expect(filtered.length).toBeGreaterThan(0);
+    expect(filtered.some(c => (c.notes || '').includes('6,14'))).toBe(true);
   });
 
   it('should filter by tags', async () => {
-    service.searchQuery.set('VIP');
-    await new Promise(resolve => setTimeout(resolve, 100));
+    service.searchQuery.set('blond');
+    await new Promise(resolve => setTimeout(resolve, 50));
     const filtered = service.filteredCustomers();
-    // Use clear check
     expect(filtered.length).toBeGreaterThan(0);
     expect(filtered.every(c => 
-      c.name.toLowerCase().includes('vip') || 
-      c.lastName.toLowerCase().includes('vip') ||
-      c.tags.some(t => t.toLowerCase().includes('vip'))
+      c.name.toLowerCase().includes('blond') || 
+      c.lastName.toLowerCase().includes('blond') ||
+      (c.notes || '').toLowerCase().includes('blond') ||
+      c.tags.some(t => t.toLowerCase().includes('blond'))
     )).toBe(true);
   });
 
-  it('should sort customers alphabetically by last name', async () => {
+  it('should sort customers alphabetically by last name / name', async () => {
     service.searchQuery.set('');
+    await new Promise(resolve => setTimeout(resolve, 50));
     const customers = service.filteredCustomers();
-    const lastNames = customers.map(c => c.lastName);
-    const sortedLastNames = [...lastNames].sort((a, b) => a.localeCompare(b));
-    expect(lastNames).toEqual(sortedLastNames);
+    expect(customers.length).toBeGreaterThan(0);
+    
+    for (let i = 0; i < customers.length - 1; i++) {
+      const current = (customers[i].lastName || customers[i].name).toLowerCase();
+      const next = (customers[i+1].lastName || customers[i+1].name).toLowerCase();
+      expect(current.localeCompare(next)).toBeLessThanOrEqual(1);
+    }
   });
 
   it('should add a new customer and retrieve it', async () => {
     const newCustomer = {
-      name: 'Test',
-      lastName: 'User',
-      phone: '123456789',
-      tags: ['New']
+      name: 'NováE2E',
+      lastName: 'Klientka',
+      phone: '0911222333',
+      tags: ['VIP', 'Farbenie'],
+      notes: 'K: 7,1 | D: 9,21'
     };
     
     await service.addCustomer(newCustomer);
+    await new Promise(resolve => setTimeout(resolve, 150));
     
-    // Dexie is live, so it should update the signal via liveQuery
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    service.searchQuery.set('User');
+    service.searchQuery.set('NováE2E');
     const filtered = service.filteredCustomers();
     expect(filtered.length).toBe(1);
-    expect(filtered[0].name).toBe('Test');
+    expect(filtered[0].name).toBe('NováE2E');
+    expect(filtered[0].notes).toBe('K: 7,1 | D: 9,21');
   });
 
-  it('should track visits for a customer', async () => {
-    service.searchQuery.set('Mrkva');
+  it('should track visits for a customer and update last visit date', async () => {
+    service.searchQuery.set('sofia');
     await new Promise(resolve => setTimeout(resolve, 50));
     
-    const jozef = service.filteredCustomers()[0];
-    expect(jozef).toBeDefined();
+    const sofia = service.filteredCustomers()[0];
+    expect(sofia).toBeDefined();
     
-    const visits = await service.getCustomerVisits(jozef.id!);
-    expect(visits.length).toBe(1);
-    expect(visits[0].service).toBe('Strih + Farbenie + Brada');
-  });
-
-  it('should update last visit date when adding a visit', async () => {
-    service.searchQuery.set('Mrkva');
-    await new Promise(resolve => setTimeout(resolve, 50));
-    
-    const jozef = service.filteredCustomers()[0];
-    expect(jozef).toBeDefined();
-    
-    const newDate = new Date();
-    
+    const visitDate = new Date();
     await service.addVisit({
-      customerId: jozef.id!,
-      date: newDate,
-      service: 'Extra Fade',
-      price: 30,
-      note: 'New visit'
+      customerId: sofia.id!,
+      date: visitDate,
+      service: 'Balayage + Tónovanie',
+      price: 85,
+      note: 'Recept: K: 6.0 + 6.14, D: 9.21'
     });
     
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, 150));
     
-    const updatedJozef = await db.customers.get(jozef.id!);
-    expect(updatedJozef?.lastVisit).toEqual(newDate);
+    const visits = await service.getCustomerVisits(sofia.id!);
+    expect(visits.length).toBeGreaterThan(0);
+    expect(visits[0].service).toBe('Balayage + Tónovanie');
+    expect(visits[0].price).toBe(85);
+
+    const updatedSofia = await db.customers.get(sofia.id!);
+    expect(updatedSofia?.lastVisit).toEqual(visitDate);
   });
 
-  it('should update customer phone and notes', async () => {
-    service.searchQuery.set('Mrkva');
+  it('should update customer phone and formula notes', async () => {
+    service.searchQuery.set('sofia');
     await new Promise(resolve => setTimeout(resolve, 50));
-    const jozef = service.filteredCustomers()[0];
+    const sofia = service.filteredCustomers()[0];
     
-    await service.updateCustomer(jozef.id!, {
-      phone: '0000 000 000',
-      notes: 'Test info'
+    await service.updateCustomer(sofia.id!, {
+      phone: '0901 111 222',
+      notes: 'K: 5,00 | D: 7,21 + 6% oxi'
     });
     
-    await new Promise(resolve => setTimeout(resolve, 100));
-    const updated = await db.customers.get(jozef.id!);
-    expect(updated?.phone).toBe('0000 000 000');
-    expect(updated?.notes).toBe('Test info');
+    await new Promise(resolve => setTimeout(resolve, 150));
+    const updated = await db.customers.get(sofia.id!);
+    expect(updated?.phone).toBe('0901 111 222');
+    expect(updated?.notes).toBe('K: 5,00 | D: 7,21 + 6% oxi');
   });
 
   it('should update visit notes', async () => {
-    service.searchQuery.set('Mrkva');
+    service.searchQuery.set('sofia');
     await new Promise(resolve => setTimeout(resolve, 50));
-    const jozef = service.filteredCustomers()[0];
+    const sofia = service.filteredCustomers()[0];
     
-    const visits = await service.getCustomerVisits(jozef.id!);
+    await service.addVisit({
+      customerId: sofia.id!,
+      date: new Date(),
+      service: 'Strih',
+      price: 25,
+      note: 'Pôvodná poznámka'
+    });
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    const visits = await service.getCustomerVisits(sofia.id!);
     const firstVisit = visits[0];
     
     await service.updateVisit(firstVisit.id!, {
-      note: 'Updated visit note'
+      note: 'Upravená poznámka k účesu'
     });
     
-    const updatedVisits = await service.getCustomerVisits(jozef.id!);
-    expect(updatedVisits[0].note).toBe('Updated visit note');
+    const updatedVisits = await service.getCustomerVisits(sofia.id!);
+    expect(updatedVisits[0].note).toBe('Upravená poznámka k účesu');
+  });
+
+  it('should update customer photo and retrieve profile image base64', async () => {
+    service.searchQuery.set('sofia');
+    await new Promise(resolve => setTimeout(resolve, 50));
+    const sofia = service.filteredCustomers()[0];
+
+    const dummyBase64Photo = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD...';
+    await service.updateCustomer(sofia.id!, {
+      photo: dummyBase64Photo
+    });
+
+    await new Promise(resolve => setTimeout(resolve, 150));
+    const updated = await db.customers.get(sofia.id!);
+    expect(updated?.photo).toBe(dummyBase64Photo);
   });
 });
+

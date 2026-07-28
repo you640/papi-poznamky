@@ -21,6 +21,7 @@ export class CustomerService {
         c.name.toLowerCase().includes(query) || 
         c.lastName.toLowerCase().includes(query) ||
         c.phone.includes(query) ||
+        (c.notes || '').toLowerCase().includes(query) ||
         c.tags.some(t => t.toLowerCase().includes(query))
       );
     }

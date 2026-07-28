@@ -1,6 +1,6 @@
 {
   "name": "Papi Hair CRM",
   "description": "Luxusný rezervačný a zákaznícky systém pre kadernícke salóny s offline-first prístupom.",
-  "requestFramePermissions": [],
-  "majorCapabilities": []
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

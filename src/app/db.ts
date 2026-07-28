@@ -28,6 +28,7 @@ export interface Customer {
   lastName: string;
   phone: string;
   email?: string;
+  photo?: string;
   lastVisit?: Date;
   tags: string[];
   notes?: string;

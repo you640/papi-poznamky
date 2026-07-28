@@ -165,8 +165,12 @@
                    [class.text-papi-gold]="selectedCustomer()?.id === customer.id"
                    [class.border-white/10]="selectedCustomer()?.id !== customer.id"
                    [class.text-white/40]="selectedCustomer()?.id !== customer.id"
-                   class="w-11 h-11 rounded-full flex items-center justify-center font-light text-sm border bg-black shrink-0 font-display transition-colors">
-                {{ getInitials(customer) }}
+                   class="w-11 h-11 rounded-full flex items-center justify-center font-light text-sm border bg-black shrink-0 font-display transition-colors overflow-hidden relative">
+                @if (customer.photo) {
+                  <img [src]="customer.photo" [alt]="customer.name" class="w-full h-full object-cover rounded-full" />
+                } @else {
+                  {{ getInitials(customer) }}
+                }
               </div>
               <div class="flex flex-col select-text select-all min-w-0">
                 <h3 [class.text-papi-gold]="selectedCustomer()?.id === customer.id"

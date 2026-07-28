@@ -219,14 +219,15 @@ export class App {
     this.selectedCustomerVisits.set([]);
   }
 
-  async onSaveCustomer(data: { id: number, name: string, lastName: string, phone: string, email: string, tags: string[], notes: string }) {
+  async onSaveCustomer(data: { id: number, name: string, lastName: string, phone: string, email: string, tags: string[], notes: string, photo?: string }) {
     await this.cs.updateCustomer(data.id, { 
       name: data.name,
       lastName: data.lastName,
       phone: data.phone, 
       email: data.email,
       tags: data.tags,
-      notes: data.notes 
+      notes: data.notes,
+      ...(data.photo !== undefined ? { photo: data.photo } : {})
     });
     // Refresh selected customer to show changes
     const updated = await db.customers.get(data.id);

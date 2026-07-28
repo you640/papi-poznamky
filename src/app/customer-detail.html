@@ -91,6 +91,28 @@
           placeholder="Miesto pre dôležité záznamy, preferencie..."></textarea>
       </div>
 
+      <!-- Photo field section -->
+      <div class="flex items-center gap-4 p-3 bg-white/5 border border-white/10 rounded-2xl">
+        <div class="w-14 h-14 rounded-full overflow-hidden bg-black border border-papi-gold/30 shrink-0 flex items-center justify-center text-papi-gold text-lg font-display">
+          @if (editPhoto()) {
+            <img [src]="editPhoto()" alt="Profilová fotka" class="w-full h-full object-cover" />
+          } @else {
+            {{ getInitials(c) }}
+          }
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="text-xs font-semibold text-white mb-0.5">Fotografia klienta</div>
+          <div class="text-[10px] text-gray-400">Odfotiť webkamerou / fotoaparátom pre rýchle rozpoznanie</div>
+        </div>
+        <button 
+          type="button" 
+          (click)="openCameraModal()" 
+          class="px-3 py-2 rounded-xl bg-papi-gold/15 border border-papi-gold/30 text-papi-gold hover:bg-papi-gold hover:text-black transition-all text-xs font-medium flex items-center gap-1.5 shrink-0">
+          <mat-icon class="text-[16px]">photo_camera</mat-icon>
+          <span>{{ editPhoto() ? 'Zmeniť fotku' : 'Odfotiť' }}</span>
+        </button>
+      </div>
+
       <div class="flex gap-3 pt-2">
         <button 
           (click)="saveChanges()" 
@@ -107,14 +129,23 @@
   } @else {
     <!-- DISPLAY MODE HEADER -->
     <div class="flex flex-col items-center text-center min-w-0 shrink-0 slide-in-from-top-4 duration-[800ms] ease-out animate-in fade-in relative z-10 w-full mb-6">
-      <!-- Avatar -->
-      <div class="mx-auto w-20 h-20 md:w-[110px] md:h-[110px] rounded-full border border-papi-gold/20 p-[2px] mb-4 shadow-[0_0_30px_rgba(216,181,137,0.12)] relative">
-        <div class="w-full h-full bg-[#0d0d0e] rounded-full flex items-center justify-center text-papi-gold text-[2.2rem] md:text-[3rem] font-light font-display">
-          {{ getInitials(c) }}
+      <!-- Avatar with Camera trigger -->
+      <div class="mx-auto w-24 h-24 md:w-[120px] md:h-[120px] rounded-full border border-papi-gold/30 p-[3px] mb-4 shadow-[0_0_35px_rgba(216,181,137,0.18)] relative group">
+        <div class="w-full h-full bg-[#0d0d0e] rounded-full overflow-hidden flex items-center justify-center text-papi-gold text-[2.2rem] md:text-[3rem] font-light font-display relative">
+          @if (c.photo) {
+            <img [src]="c.photo" [alt]="c.name" class="w-full h-full object-cover rounded-full" />
+          } @else {
+            {{ getInitials(c) }}
+          }
         </div>
-        <div class="absolute -bottom-0.5 -right-0.5 w-6 h-6 md:w-8 md:h-8 rounded-full bg-papi-gold flex items-center justify-center text-black shadow-lg">
-          <mat-icon class="text-[12px] md:text-[16px] flex items-center justify-center">verified</mat-icon>
-        </div>
+        
+        <!-- Camera action badge -->
+        <button 
+          (click)="openCameraModal()" 
+          class="absolute -bottom-1 -right-1 w-9 h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-r from-[#D8B589] to-[#EFDBC2] text-black hover:scale-110 active:scale-95 flex items-center justify-center shadow-xl border-2 border-[#111112] transition-all cursor-pointer z-10"
+          title="Odfotiť klienta / spravovať fotku">
+          <mat-icon class="text-[18px] md:text-[20px] flex items-center justify-center">photo_camera</mat-icon>
+        </button>
       </div>
       
       <h1 class="text-[1.8rem] md:text-[2.6rem] font-display text-white truncate tracking-tight w-full mb-1 select-text select-all">
@@ -309,6 +340,116 @@
           <button (click)="isDeleteConfirmOpen.set(false)" class="flex-1 bg-white/5 hover:bg-white/10 text-gray-300 font-medium py-3 rounded-xl text-xs uppercase tracking-wider border border-white/10 transition-all">
             Zrušiť
           </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Camera Capture Modal -->
+  @if (isCameraOpen()) {
+    <div class="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in duration-200">
+      <div class="bg-[#121214] border border-papi-gold/30 rounded-3xl p-5 md:p-6 max-w-lg w-full flex flex-col items-center shadow-2xl relative overflow-hidden">
+        
+        <!-- Modal Header -->
+        <div class="w-full flex justify-between items-center pb-3 border-b border-white/10 mb-4">
+          <div class="flex items-center gap-2 text-papi-gold text-sm font-semibold tracking-wide">
+            <mat-icon class="text-[20px]">photo_camera</mat-icon>
+            <span>Fotografia klienta</span>
+          </div>
+          <button (click)="closeCameraModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all">
+            <mat-icon class="text-[18px]">close</mat-icon>
+          </button>
+        </div>
+
+        <!-- Camera Viewfinder / Preview Container -->
+        <div class="w-full aspect-square max-w-[360px] bg-black rounded-2xl border border-white/10 overflow-hidden relative flex items-center justify-center shadow-inner mb-4">
+          
+          @if (capturedPhoto()) {
+            <!-- Snapshot Preview -->
+            <img [src]="capturedPhoto()" alt="Odfotený klient" class="w-full h-full object-cover animate-in zoom-in-95 duration-200" />
+            <div class="absolute top-3 left-3 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-papi-gold text-[11px] font-medium flex items-center gap-1.5">
+              <mat-icon class="text-[14px]">check_circle</mat-icon>
+              <span>Náhľad fotky</span>
+            </div>
+          } @else if (isCameraActive()) {
+            <!-- Live Video Stream -->
+            <video id="cameraFeedVideo" autoplay playsinline muted class="w-full h-full object-cover scale-x-[-1]"></video>
+            
+            <!-- Camera Grid Overlay -->
+            <div class="absolute inset-0 border border-white/10 pointer-events-none grid grid-cols-3 grid-rows-3 opacity-30">
+              <div class="border-r border-b border-white/20"></div>
+              <div class="border-r border-b border-white/20"></div>
+              <div class="border-b border-white/20"></div>
+              <div class="border-r border-b border-white/20"></div>
+              <div class="border-r border-b border-white/20"></div>
+              <div class="border-b border-white/20"></div>
+              <div class="border-r border-white/20"></div>
+              <div class="border-r border-white/20"></div>
+              <div></div>
+            </div>
+
+            <!-- Camera Switch Toggle -->
+            <button 
+              (click)="toggleFacingMode()" 
+              class="absolute top-3 right-3 p-2.5 rounded-full bg-black/60 hover:bg-black/80 text-white border border-white/20 backdrop-blur-md transition-all shadow-md active:scale-90"
+              title="Prepnúť fotoaparát (Predný/Zadný)">
+              <mat-icon class="text-[18px]">cameraswitch</mat-icon>
+            </button>
+          } @else {
+            <!-- Camera Loading or Error State -->
+            <div class="flex flex-col items-center justify-center p-6 text-center text-white/60">
+              @if (cameraError()) {
+                <mat-icon class="text-[40px] text-amber-400 mb-2">videocam_off</mat-icon>
+                <p class="text-xs text-amber-200 mb-3 max-w-xs leading-relaxed">{{ cameraError() }}</p>
+                <button (click)="startCameraStream()" class="px-4 py-2 rounded-xl bg-papi-gold/20 hover:bg-papi-gold/30 border border-papi-gold/40 text-papi-gold text-xs font-semibold">
+                  Skúsiť znova
+                </button>
+              } @else {
+                <mat-icon class="text-[40px] text-papi-gold animate-pulse mb-2">linked_camera</mat-icon>
+                <p class="text-xs text-white/60">Pripravuje sa fotoaparát...</p>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Camera Controls -->
+        <div class="w-full flex flex-col gap-3">
+          @if (capturedPhoto()) {
+            <div class="flex gap-2">
+              <button 
+                (click)="confirmPhoto()" 
+                class="flex-1 bg-gradient-to-r from-[#D8B589] to-[#EFDBC2] hover:opacity-90 text-black font-semibold py-3 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 text-xs uppercase tracking-wider">
+                <mat-icon class="text-[18px]">save</mat-icon> Uložiť fotku
+              </button>
+              <button 
+                (click)="retakePhoto()" 
+                class="px-4 bg-white/10 hover:bg-white/15 text-white font-medium py-3 rounded-xl transition-all text-xs flex items-center gap-1.5 border border-white/10">
+                <mat-icon class="text-[18px]">refresh</mat-icon> Odfotiť znova
+              </button>
+            </div>
+          } @else if (isCameraActive()) {
+            <button 
+              (click)="takePhoto()" 
+              class="w-full bg-gradient-to-r from-[#D8B589] to-[#EFDBC2] hover:opacity-90 text-black font-bold py-3.5 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 text-xs uppercase tracking-wider active:scale-[0.98]">
+              <mat-icon class="text-[20px]">photo_camera</mat-icon> Odfotiť klienta
+            </button>
+          }
+
+          <!-- File upload fallback & Photo Removal Option -->
+          <div class="flex items-center justify-between pt-2 border-t border-white/10 text-xs">
+            <label class="cursor-pointer flex items-center gap-1.5 text-white/70 hover:text-papi-gold transition-colors py-1">
+              <mat-icon class="text-[16px]">upload_file</mat-icon>
+              <span>Vybrať z galérie</span>
+              <input type="file" accept="image/*" (change)="onFileUpload($event)" class="hidden" />
+            </label>
+
+            @if (c.photo) {
+              <button (click)="removePhoto()" class="flex items-center gap-1 text-red-400 hover:text-red-300 transition-colors py-1">
+                <mat-icon class="text-[16px]">delete_outline</mat-icon>
+                <span>Odstrániť fotku</span>
+              </button>
+            }
+          </div>
         </div>
       </div>
     </div>

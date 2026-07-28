@@ -19,7 +19,7 @@ export class CustomerDetailComponent {
   closed = output<void>();
   edit = output<Customer>();
   book = output<Customer>();
-  save = output<{ id: number, name: string, lastName: string, phone: string, email: string, tags: string[], notes: string }>();
+  save = output<{ id: number, name: string, lastName: string, phone: string, email: string, tags: string[], notes: string, photo?: string }>();
   deleteCustomer = output<number>();
   updateVisitNote = output<{ id: number, note: string }>();
 
@@ -30,6 +30,15 @@ export class CustomerDetailComponent {
   editEmail = signal('');
   editTags = signal('');
   editNotes = signal('');
+  editPhoto = signal('');
+
+  // Camera API modal states
+  isCameraOpen = signal(false);
+  isCameraActive = signal(false);
+  cameraError = signal<string | null>(null);
+  capturedPhoto = signal<string | null>(null);
+  facingMode = signal<'user' | 'environment'>('environment');
+  mediaStream: MediaStream | null = null;
 
   editingVisitId = signal<number | null>(null);
   currentEditVisitNote = signal('');
@@ -45,6 +54,7 @@ export class CustomerDetailComponent {
       this.editEmail.set(c.email || '');
       this.editTags.set((c.tags || []).join(', '));
       this.editNotes.set(c.notes || '');
+      this.editPhoto.set(c.photo || '');
       this.isEditing.set(false);
       this.isDeleteConfirmOpen.set(false);
     });
@@ -62,6 +72,7 @@ export class CustomerDetailComponent {
     this.editEmail.set(c.email || '');
     this.editTags.set((c.tags || []).join(', '));
     this.editNotes.set(c.notes || '');
+    this.editPhoto.set(c.photo || '');
     this.isEditing.set(false);
   }
 
@@ -80,10 +91,157 @@ export class CustomerDetailComponent {
         phone: this.editPhone().trim(),
         email: this.editEmail().trim(),
         tags: tagsArray,
-        notes: this.editNotes()
+        notes: this.editNotes(),
+        photo: this.editPhoto()
       });
       this.isEditing.set(false);
     }
+  }
+
+  // --- CAMERA API METHODS ---
+  openCameraModal() {
+    this.capturedPhoto.set(null);
+    this.cameraError.set(null);
+    this.isCameraOpen.set(true);
+    this.startCameraStream();
+  }
+
+  closeCameraModal() {
+    this.stopCameraStream();
+    this.isCameraOpen.set(false);
+    this.capturedPhoto.set(null);
+    this.cameraError.set(null);
+  }
+
+  async startCameraStream() {
+    this.stopCameraStream();
+    this.cameraError.set(null);
+    this.isCameraActive.set(false);
+
+    try {
+      if (typeof window === 'undefined' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Fotoaparát nie je v tomto prehliadači podporovaný.');
+      }
+
+      const constraints: MediaStreamConstraints = {
+        video: {
+          facingMode: this.facingMode(),
+          width: { ideal: 1024 },
+          height: { ideal: 1024 }
+        }
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      this.mediaStream = stream;
+      this.isCameraActive.set(true);
+
+      setTimeout(() => {
+        const videoEl = document.getElementById('cameraFeedVideo') as HTMLVideoElement;
+        if (videoEl) {
+          videoEl.srcObject = stream;
+          videoEl.play().catch(err => console.warn('Video stream error:', err));
+        }
+      }, 100);
+    } catch (err) {
+      console.warn('Camera error:', err);
+      const errMsg = err instanceof Error ? err.message : 'Nepodarilo sa spustiť kamera stream. Použite nahratie súboru.';
+      this.cameraError.set(errMsg);
+      this.isCameraActive.set(false);
+    }
+  }
+
+  toggleFacingMode() {
+    this.facingMode.update(m => m === 'user' ? 'environment' : 'user');
+    this.startCameraStream();
+  }
+
+  takePhoto() {
+    const videoEl = document.getElementById('cameraFeedVideo') as HTMLVideoElement;
+    if (!videoEl) return;
+
+    const canvas = document.createElement('canvas');
+    const width = videoEl.videoWidth || 640;
+    const height = videoEl.videoHeight || 640;
+
+    const size = Math.min(width, height);
+    canvas.width = size;
+    canvas.height = size;
+
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      const startX = (width - size) / 2;
+      const startY = (height - size) / 2;
+      ctx.drawImage(videoEl, startX, startY, size, size, 0, 0, size, size);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      this.capturedPhoto.set(dataUrl);
+      this.stopCameraStream();
+    }
+  }
+
+  retakePhoto() {
+    this.capturedPhoto.set(null);
+    this.startCameraStream();
+  }
+
+  confirmPhoto() {
+    const photo = this.capturedPhoto();
+    const c = this.customer();
+    if (c && c.id && photo !== null) {
+      this.editPhoto.set(photo);
+      this.save.emit({
+        id: c.id,
+        name: this.editName().trim() || c.name,
+        lastName: this.editLastName().trim() || c.lastName,
+        phone: this.editPhone().trim() || c.phone,
+        email: this.editEmail().trim() || c.email || '',
+        tags: c.tags,
+        notes: this.editNotes() || c.notes || '',
+        photo: photo
+      });
+      this.closeCameraModal();
+    }
+  }
+
+  removePhoto() {
+    const c = this.customer();
+    if (c && c.id) {
+      this.editPhoto.set('');
+      this.save.emit({
+        id: c.id,
+        name: this.editName().trim() || c.name,
+        lastName: this.editLastName().trim() || c.lastName,
+        phone: this.editPhone().trim() || c.phone,
+        email: this.editEmail().trim() || c.email || '',
+        tags: c.tags,
+        notes: this.editNotes() || c.notes || '',
+        photo: ''
+      });
+      this.closeCameraModal();
+    }
+  }
+
+  onFileUpload(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        if (result) {
+          this.capturedPhoto.set(result);
+          this.stopCameraStream();
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  private stopCameraStream() {
+    if (this.mediaStream) {
+      this.mediaStream.getTracks().forEach(track => track.stop());
+      this.mediaStream = null;
+    }
+    this.isCameraActive.set(false);
   }
 
   confirmDelete() {
