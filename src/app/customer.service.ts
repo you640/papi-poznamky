@@ -104,6 +104,31 @@ export class CustomerService {
     return await db.customers.add(customer as Customer);
   }
 
+  findPotentialDuplicates(name: string, lastName: string, phone?: string, excludeId?: number): Customer[] {
+    const normName = name.toLowerCase().trim();
+    const normLast = lastName.toLowerCase().trim();
+    const normPhone = (phone || '').replace(/\s+/g, '');
+
+    return this.customersList().filter(c => {
+      if (excludeId && c.id === excludeId) return false;
+      
+      const cName = c.name.toLowerCase().trim();
+      const cLast = c.lastName.toLowerCase().trim();
+      const cPhone = (c.phone || '').replace(/\s+/g, '');
+
+      // Check phone match
+      if (normPhone && cPhone && normPhone === cPhone) return true;
+
+      // Check full name match
+      if (normName && normLast && cName === normName && cLast === normLast) return true;
+
+      // Check single name match if either last name is empty
+      if (normName && !normLast && !cLast && cName === normName) return true;
+
+      return false;
+    });
+  }
+
   async updateCustomer(id: number, changes: Partial<Customer>) {
     return await db.customers.update(id, changes);
   }
@@ -206,16 +231,16 @@ export class CustomerService {
     await db.visits.clear();
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem('dont_reseed_after_wipe');
-      localStorage.setItem('did_seed_hair_clients_v10', 'true');
+      localStorage.setItem('did_seed_hair_clients_v11', 'true');
     }
     await this.seedData(true);
   }
 
   private async seedData(force = false) {
-    if (typeof localStorage !== 'undefined' && !localStorage.getItem('did_seed_hair_clients_v10')) {
+    if (typeof localStorage !== 'undefined' && !localStorage.getItem('did_seed_hair_clients_v11')) {
        await db.customers.clear();
        await db.visits.clear();
-       localStorage.setItem('did_seed_hair_clients_v10', 'true');
+       localStorage.setItem('did_seed_hair_clients_v11', 'true');
        force = true;
     }
 
@@ -227,7 +252,7 @@ export class CustomerService {
     const initialCustomers: Omit<Customer, 'id'>[] = [
       { name: 'Sofia', lastName: 'Jakubová', phone: '', tags: ['Farbenie'], notes: 'K: 6,1 - 6,14 - 5,00 | D: 7,1 - 6,14' },
       { name: 'Karin', lastName: 'K.', phone: '', tags: ['Farbenie'], notes: 'K: 6.00 - 7 | D: 7.21' },
-      { name: 'Kimáková', lastName: '', phone: '', tags: ['Medená', 'Farbenie'], notes: 'K: 6 (červená-medená) | NOVÁ: 7 plus 6.34' },
+      { name: 'Kimáková', lastName: '', phone: '', tags: ['Medená', 'Farbenie'], notes: 'K: 6 (červená-medená) | NOVÁ: 7 plus 6.34 | Variant: Recept 6, 6.4' },
       { name: 'Simona', lastName: 'Hričková', phone: '', tags: ['Farbenie'], notes: 'Recept: 6.00, 6.1' },
       { name: 'Michaela', lastName: 'Wolczková', phone: '', tags: ['Farbenie', 'Tónovanie'], notes: 'K: 7.21 | S: 7.21 - 9.21 | D: 9.21' },
       { name: 'Lívia', lastName: 'Liptajová', phone: '', tags: ['Farbenie'], notes: 'Recept: 3 - 4' },
@@ -236,14 +261,13 @@ export class CustomerService {
       { name: 'Anna', lastName: 'Mačková', phone: '', tags: ['Tónovanie'], notes: 'Tonovačka: 7,21 - 10.22 - 0.11' },
       { name: 'Peťa', lastName: 'Autoškola', phone: '', tags: ['Farbenie'], notes: 'K: 5-6 green | D: 5.32 green' },
       { name: 'Forgáčová', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 7 | D: 8.31' },
-      { name: 'Kimáková (variant)', lastName: '', phone: '', tags: ['Farbenie'], notes: 'Recept: 6, 6.4' },
       { name: 'Alexandra', lastName: 'Olejová', phone: '', tags: ['Farbenie'], notes: 'K: 7,13 | D: 7,13' },
       { name: 'Hufnagelová', lastName: '', phone: '', tags: ['Tónovanie', 'Blond'], notes: 'Toner: 7,14 + 7,21 (chce svetlejšiu)' },
       { name: 'Gabriela', lastName: 'Rosič', phone: '0908343587', tags: ['Farbenie'], notes: 'K: 5 + 6,3 kombinovanie s 9,31' },
       { name: 'Xénia', lastName: '', phone: '', tags: ['Farbenie'], notes: 'Celé vlasy: 7.3, 7.13, trošku 7.00' },
       { name: 'Halpelka', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 6-7 | D: 7.21' },
-      { name: 'Grančová', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 5.00 + kvapka 1' },
-      { name: 'Medvedová', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 7' },
+      { name: 'Grančová', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 5.00 + kvapka 1 | Alt: K: 4' },
+      { name: 'Medvedová', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 7 | Alt: K: 7,31' },
       { name: 'Ernstová', lastName: '', phone: '', tags: ['Blond', 'Zosvetľovanie'], notes: 'Recept: 11,02 + 000ss + 12% oxi' },
       { name: 'Delfíniová', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 5 + 5,3 | D: 6,3' },
       { name: 'Janka', lastName: 'Karajošová', phone: '', tags: ['Blond', 'Tónovanie'], notes: 'Recept: 10.21 + 9.21' },
@@ -267,7 +291,6 @@ export class CustomerService {
       { name: 'Zuzka', lastName: 'Gumanová', phone: '', tags: ['Farbenie'], notes: 'Recept: 6 + 6,1 + 5 + Green + 0,02' },
       { name: 'Gumanová', lastName: 'Mama', phone: '', tags: ['Blond', 'Tónovanie'], notes: 'Recept: 10,21 (20g) + 10,1 (5g) + 0,11 (5g)' },
       { name: 'Daniela', lastName: 'Michalíková', phone: '', tags: ['Farbenie'], notes: 'K: 5' },
-      { name: 'Medvedová', lastName: '(7.31)', phone: '', tags: ['Farbenie'], notes: 'K: 7,31' },
       { name: 'Ondrušová', lastName: '', phone: '', tags: ['Blond'], notes: 'K: 6,00 | D: 11,02 + 11,31' },
       { name: 'Paťa', lastName: 'Alex', phone: '', tags: ['Farbenie'], notes: 'K: 5,1 | D: 6,1' },
       { name: 'Goliašová', lastName: '', phone: '', tags: ['Tmavá'], notes: 'K: 4' },
@@ -284,7 +307,6 @@ export class CustomerService {
       { name: 'Jana', lastName: 'Kovalčíková', phone: '', tags: ['Farbenie'], notes: 'K: 4 | D: 6,5' },
       { name: 'Kačička', lastName: 'Mama', phone: '', tags: ['Blond', 'Melír'], notes: 'Recept: 10,21 | Melír 12%' },
       { name: 'Mama Flip', lastName: 'Duda', phone: '', tags: ['Farbenie'], notes: 'K: 6,14 + 6 | D: 7,21' },
-      { name: 'Grancová', lastName: '', phone: '', tags: ['Farbenie'], notes: 'K: 4' },
       { name: 'Anička', lastName: '', phone: '', tags: ['Blond'], notes: 'K: 8,13 + 8 (9%) | D: 9,13 (3%) | NOVÁ: 9,21 + 8,1' },
       { name: 'Saša', lastName: 'Jaja', phone: '', tags: ['Blond'], notes: 'K: 9,1' },
       { name: 'Winkelnesová', lastName: '', phone: '', tags: ['Blond'], notes: 'K: 4-5 | D: 9,21 (10g) + 10,21 (20g) + 11,02 (20g)' },
