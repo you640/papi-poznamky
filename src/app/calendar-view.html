@@ -4,6 +4,8 @@
   <!-- Filters Bar -->
   <div class="backdrop-blur-md bg-white/5 border-b border-white/5 p-4 md:px-8 py-5 flex flex-col md:flex-row gap-5 items-center justify-between shrink-0 relative z-10 w-full">
     <div class="flex flex-col md:flex-row gap-4 w-full md:w-auto md:flex-1">
+      
+      <!-- ZÁKAZNÍK DROPDOWN -->
       <div class="flex flex-col gap-1.5 w-full md:max-w-xs">
         <label for="filterCustomer" class="text-[9px] text-[#D8B589] opacity-70 uppercase tracking-[0.2em] font-medium ml-2">Zákazník</label>
         <div class="relative group w-full">
@@ -12,8 +14,8 @@
             [ngModel]="filterCustomer() || ''"
             (ngModelChange)="onCustomerFilterChange($event)"
             class="w-full luxury-input appearance-none cursor-pointer pl-5 pr-10 hover:bg-white/5 transition-all h-[42px] text-sm">
-            <option value="" class="bg-papi-dark text-white">Všetci zákazníci</option>
-            @for (c of cs.filteredCustomers(); track c.id) {
+            <option value="" class="bg-papi-dark text-white">Všetci zákazníci ({{ allCustomersSorted().length }})</option>
+            @for (c of allCustomersSorted(); track c.id) {
               <option [value]="c.id" class="bg-papi-dark text-white">{{ c.name }} {{ c.lastName }}</option>
             }
           </select>
@@ -21,7 +23,7 @@
         </div>
       </div>
 
-      <!-- Search in Calendar -->
+      <!-- HĽADAŤ INPUT -->
       <div class="flex flex-col gap-1.5 w-full md:max-w-xs">
         <div class="text-[9px] text-[#D8B589] opacity-70 uppercase tracking-[0.2em] font-medium ml-2">Hľadať</div>
         <div class="relative group w-full">
@@ -29,15 +31,27 @@
           <input 
             [ngModel]="cs.searchQuery()" 
             (ngModelChange)="cs.searchQuery.set($event)"
-            class="w-full luxury-input pl-10 pr-4 hover:bg-white/5 transition-all h-[42px] text-sm select-text"
+            class="w-full luxury-input pl-10 pr-9 hover:bg-white/5 transition-all h-[42px] text-sm select-text"
             placeholder="">
+          
+          @if (cs.searchQuery()) {
+            <button 
+              (click)="cs.searchQuery.set('')"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors">
+              <mat-icon class="text-[16px] flex items-center justify-center">cancel</mat-icon>
+            </button>
+          }
         </div>
       </div>
     </div>
     
-    <button (click)="refreshVisits()" class="shrink-0 w-full md:w-auto px-6 rounded-xl hover:scale-105 h-[46px] md:h-[42px] mt-2 md:mt-auto flex items-center justify-center bg-papi-gold/10 border border-papi-gold/30 text-papi-gold font-bold transition-all shadow-lg shadow-papi-gold/5">
-      <mat-icon class="text-[18px] mr-2">sync</mat-icon> 
-      <span class="text-[10px] uppercase tracking-[0.15em]">Aktualizovať</span>
+    <!-- AKTUALIZOVAŤ BUTTON -->
+    <button 
+      (click)="refreshVisits()" 
+      [disabled]="isRefreshing()"
+      class="shrink-0 w-full md:w-auto px-6 rounded-xl hover:scale-105 active:scale-95 h-[46px] md:h-[42px] mt-2 md:mt-auto flex items-center justify-center bg-papi-gold/10 border border-papi-gold/30 text-papi-gold font-bold transition-all shadow-lg shadow-papi-gold/5 disabled:opacity-50 cursor-pointer">
+      <mat-icon [class.animate-spin]="isRefreshing()" class="text-[18px] mr-2">sync</mat-icon> 
+      <span class="text-[10px] uppercase tracking-[0.15em]">{{ isRefreshing() ? 'Obnovujem...' : 'Aktualizovať' }}</span>
     </button>
   </div>
 
@@ -69,12 +83,25 @@
           </div>
         </div>
       } @empty {
-        <div class="text-center py-20 opacity-30 select-none">
-          <mat-icon class="text-6xl mb-4 w-auto h-auto">event_busy</mat-icon>
-          <p class="font-display font-black uppercase tracking-widest text-sm">Žiadne záznamy</p>
-          <p class="text-xs tracking-normal mt-2">V zvolenom období sa nenašli žiadne návštevy.</p>
+        <div class="text-center py-20 opacity-80 select-none flex flex-col items-center justify-center">
+          <div class="w-16 h-16 rounded-2xl bg-papi-gold/5 border border-papi-gold/10 flex items-center justify-center text-papi-gold mb-4">
+            <mat-icon class="text-[32px] w-[32px] h-[32px] flex items-center justify-center">event_busy</mat-icon>
+          </div>
+          <p class="font-display font-bold uppercase tracking-widest text-sm text-white/90">Žiadne záznamy</p>
+          <p class="text-xs text-white/40 mt-1 max-w-xs">
+            V zvolenom období alebo pre zadané kritériá sa nenašli žiadne návštevy.
+          </p>
+          @if (filterCustomer() || cs.searchQuery()) {
+            <button 
+              (click)="clearFilters()" 
+              class="mt-4 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-papi-gold text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-2">
+              <mat-icon class="text-[16px]">filter_alt_off</mat-icon>
+              <span>Zrušiť filtre</span>
+            </button>
+          }
         </div>
       }
     </div>
   </div>
 </section>
+
