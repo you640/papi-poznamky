@@ -61,6 +61,8 @@ export class App {
   isStandalone = signal<boolean>(false);
   isOffline = signal<boolean>(typeof navigator !== 'undefined' ? !navigator.onLine : false);
   installBannerDismissed = signal<boolean>(typeof localStorage !== 'undefined' && localStorage.getItem('papi_install_dismissed') === 'true');
+  isIos = signal<boolean>(false);
+  showIosInstallModal = signal<boolean>(false);
 
   // Swipe Gestures & Delete Confirmation Signals
   activeSwipedCustomerId = signal<number | null>(null);
@@ -106,6 +108,11 @@ export class App {
     const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || Boolean(navWithStandalone.standalone);
     this.isStandalone.set(isStandaloneMode);
 
+    // Detect iOS device
+    const ua = navigator.userAgent;
+    const isIosDevice = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    this.isIos.set(isIosDevice);
+
     // Intercept beforeinstallprompt
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
@@ -119,12 +126,20 @@ export class App {
 
   async installPwaApp() {
     const promptEvent = this.deferredInstallPrompt();
-    if (!promptEvent) return;
-    promptEvent.prompt();
-    const choice = await promptEvent.userChoice;
-    if (choice && choice.outcome === 'accepted') {
-      this.deferredInstallPrompt.set(null);
+    if (promptEvent) {
+      promptEvent.prompt();
+      const choice = await promptEvent.userChoice;
+      if (choice && choice.outcome === 'accepted') {
+        this.deferredInstallPrompt.set(null);
+      }
+    } else {
+      // Show iOS / Firefox / Safari manual install instruction modal
+      this.showIosInstallModal.set(true);
     }
+  }
+
+  closeIosInstallModal() {
+    this.showIosInstallModal.set(false);
   }
 
   dismissInstallBanner() {

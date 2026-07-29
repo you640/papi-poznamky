@@ -82,21 +82,23 @@
   }
 
   <!-- PWA INSTALL BANNER -->
-  @if (deferredInstallPrompt() && !isStandalone() && !installBannerDismissed()) {
+  @if (!isStandalone() && !installBannerDismissed()) {
     <div class="bg-papi-gold/10 border-y border-papi-gold/30 px-4 py-2.5 text-xs text-papi-gold-light flex items-center justify-between shrink-0 z-40 gap-3">
       <div class="flex items-center gap-2.5 min-w-0">
-        <img src="/icon-192.svg" alt="Papi CRM" class="w-6 h-6 rounded-md shrink-0" />
-        <span class="truncate">Nainštalujte si <strong>Papi CRM</strong> na plochu pre bleskový 60 FPS prístup a offline funkčnosť.</span>
+        <img src="/icon-192.svg" alt="Papi CRM" class="w-6 h-6 rounded-md shrink-0 border border-papi-gold/30" />
+        <span class="truncate">Nainštalujte si <strong>Papi CRM</strong> na plochu pre bleskový prístup a offline funkčnosť.</span>
       </div>
       <div class="flex items-center gap-2 shrink-0">
         <button 
           (click)="installPwaApp()" 
-          class="px-3 py-1 bg-papi-gold text-black rounded-full font-semibold text-[11px] hover:bg-papi-gold-light transition-colors shadow-sm cursor-pointer">
-          Nainštalovať
+          class="px-3.5 py-1.5 bg-papi-gold text-black rounded-full font-semibold text-[11px] hover:bg-papi-gold-light transition-all shadow-md cursor-pointer flex items-center gap-1 active:scale-95">
+          <mat-icon class="text-sm text-black flex items-center justify-center">get_app</mat-icon>
+          <span>{{ deferredInstallPrompt() ? 'Nainštalovať' : 'Pridať na plochu' }}</span>
         </button>
         <button 
           (click)="dismissInstallBanner()" 
-          class="p-1 text-white/40 hover:text-white transition-colors cursor-pointer">
+          class="p-1 text-white/40 hover:text-white transition-colors cursor-pointer"
+          title="Zavrieť">
           <mat-icon class="text-sm flex items-center justify-center">close</mat-icon>
         </button>
       </div>
@@ -184,7 +186,11 @@
             <button 
               type="button"
               (click)="selectCustomer(customer)"
-              class="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-papi-gold/30 via-papi-gold/15 to-transparent flex items-center pl-4 text-papi-gold font-medium text-xs rounded-l-[20px] z-0 cursor-pointer border-0 outline-none text-left">
+              [class.opacity-100]="getSwipeOffsetFor(customer.id) > 0"
+              [class.opacity-0]="getSwipeOffsetFor(customer.id) <= 0"
+              [class.pointer-events-none]="getSwipeOffsetFor(customer.id) <= 0"
+              [class.hidden]="getSwipeOffsetFor(customer.id) <= 0"
+              class="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-papi-gold/30 via-papi-gold/15 to-transparent flex items-center pl-4 text-papi-gold font-medium text-xs rounded-l-[20px] z-0 cursor-pointer border-0 outline-none text-left transition-opacity duration-150">
               <mat-icon class="mr-1.5 text-base flex items-center justify-center">edit</mat-icon>
               <span>Upraviť</span>
             </button>
@@ -193,7 +199,11 @@
             <button 
               type="button"
               (click)="confirmDeleteCustomer(customer)"
-              class="absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-red-600/40 via-red-500/20 to-transparent flex items-center justify-end pr-4 text-red-400 font-medium text-xs rounded-r-[20px] z-0 cursor-pointer border-0 outline-none text-right">
+              [class.opacity-100]="getSwipeOffsetFor(customer.id) < 0"
+              [class.opacity-0]="getSwipeOffsetFor(customer.id) >= 0"
+              [class.pointer-events-none]="getSwipeOffsetFor(customer.id) >= 0"
+              [class.hidden]="getSwipeOffsetFor(customer.id) >= 0"
+              class="absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-red-600/40 via-red-500/20 to-transparent flex items-center justify-end pr-4 text-red-400 font-medium text-xs rounded-r-[20px] z-0 cursor-pointer border-0 outline-none text-right transition-opacity duration-150">
               <span>Zmazať</span>
               <mat-icon class="ml-1.5 text-base flex items-center justify-center">delete</mat-icon>
             </button>
@@ -707,6 +717,83 @@
             <mat-icon class="text-[16px]">delete</mat-icon> Zmazať
           </button>
         </div>
+      </div>
+    </div>
+  }
+
+  <!-- PWA INSTALL INSTRUCTIONS MODAL (iPhone Safari, Mac Safari & Firefox) -->
+  @if (showIosInstallModal()) {
+    <div class="fixed inset-0 z-[180] flex items-end md:items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
+      <div class="bg-[#0e0e10] border border-papi-gold/30 rounded-3xl w-full max-w-md p-6 shadow-2xl flex flex-col animate-in slide-in-from-bottom-full md:zoom-in-95 duration-300 pb-[calc(1.5rem+env(safe-area-inset-bottom))] relative overflow-hidden text-left">
+        
+        <div class="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-papi-gold/60 to-transparent"></div>
+        <div class="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-48 bg-papi-gold/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <img src="/icon-192.svg" alt="Papi CRM" class="w-10 h-10 rounded-xl border border-papi-gold/40 shadow-md" />
+            <div>
+              <h2 class="text-base font-bold font-display text-white">Inštalácia aplikácie Papi CRM</h2>
+              <p class="text-[11px] text-papi-gold-light">Pridať na plochu iPhone / Safari / Desktop</p>
+            </div>
+          </div>
+          <button 
+            (click)="closeIosInstallModal()" 
+            class="p-1.5 text-white/40 hover:text-white bg-white/5 rounded-full transition-colors cursor-pointer">
+            <mat-icon class="text-sm flex items-center justify-center">close</mat-icon>
+          </button>
+        </div>
+
+        @if (isIos()) {
+          <!-- iOS Safari Steps -->
+          <div class="space-y-3.5 my-2">
+            <div class="flex items-start gap-3 bg-white/[0.03] p-3 rounded-2xl border border-white/5">
+              <div class="w-7 h-7 rounded-full bg-papi-gold/15 border border-papi-gold/30 text-papi-gold flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">1</div>
+              <div class="text-xs text-white/80">
+                V dolnej lište Safari kliknite na tlačidlo <strong class="text-papi-gold">Zdieľať (Share)</strong>
+                <mat-icon class="inline-block text-base text-papi-gold align-middle ml-1">ios_share</mat-icon>.
+              </div>
+            </div>
+
+            <div class="flex items-start gap-3 bg-white/[0.03] p-3 rounded-2xl border border-white/5">
+              <div class="w-7 h-7 rounded-full bg-papi-gold/15 border border-papi-gold/30 text-papi-gold flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">2</div>
+              <div class="text-xs text-white/80">
+                Posuňte sa v ponuke nižšie a zvoľte možnosť <strong class="text-papi-gold">Pridať na plochu</strong> (Add to Home Screen)
+                <mat-icon class="inline-block text-base text-papi-gold align-middle ml-1">add_box</mat-icon>.
+              </div>
+            </div>
+
+            <div class="flex items-start gap-3 bg-white/[0.03] p-3 rounded-2xl border border-white/5">
+              <div class="w-7 h-7 rounded-full bg-papi-gold/15 border border-papi-gold/30 text-papi-gold flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">3</div>
+              <div class="text-xs text-white/80">
+                Vpravo hore ťuknite na <strong class="text-papi-gold">Pridať (Add)</strong>. Aplikácia sa uloží ako samostatná aplikácia na ploche!
+              </div>
+            </div>
+          </div>
+        } @else {
+          <!-- General Browser / Desktop Firefox / Safari Steps -->
+          <div class="space-y-3.5 my-2">
+            <div class="flex items-start gap-3 bg-white/[0.03] p-3 rounded-2xl border border-white/5">
+              <div class="w-7 h-7 rounded-full bg-papi-gold/15 border border-papi-gold/30 text-papi-gold flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">1</div>
+              <div class="text-xs text-white/80">
+                V menu prehliadača (Safari / Firefox / Chrome) otvorte ponuku a vyberte <strong class="text-papi-gold">Inštalovať aplikáciu</strong> alebo <strong class="text-papi-gold">Pridať do Docku / Na plochu</strong>.
+              </div>
+            </div>
+
+            <div class="flex items-start gap-3 bg-white/[0.03] p-3 rounded-2xl border border-white/5">
+              <div class="w-7 h-7 rounded-full bg-papi-gold/15 border border-papi-gold/30 text-papi-gold flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">2</div>
+              <div class="text-xs text-white/80">
+                Na počítači môžete tiež stlačiť skratku <strong class="text-papi-gold">Cmd + D</strong> (alebo Ctrl + D) pre uloženie záložky pre okamžitý prístup.
+              </div>
+            </div>
+          </div>
+        }
+
+        <button 
+          (click)="closeIosInstallModal()"
+          class="w-full mt-4 bg-papi-gold text-black font-semibold py-3 rounded-xl transition-all shadow-md text-xs tracking-wider uppercase cursor-pointer hover:bg-papi-gold-light active:scale-[0.98]">
+          Rozumiem
+        </button>
       </div>
     </div>
   }
