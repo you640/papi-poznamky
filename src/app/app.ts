@@ -62,6 +62,17 @@ export class App {
   isOffline = signal<boolean>(typeof navigator !== 'undefined' ? !navigator.onLine : false);
   installBannerDismissed = signal<boolean>(typeof localStorage !== 'undefined' && localStorage.getItem('papi_install_dismissed') === 'true');
 
+  // Swipe Gestures & Delete Confirmation Signals
+  activeSwipedCustomerId = signal<number | null>(null);
+  swipeOffset = signal<number>(0);
+  isSwiping = signal<boolean>(false);
+  customerToDelete = signal<Customer | null>(null);
+
+  private swipeStartX = 0;
+  private swipeStartY = 0;
+  private isHorizontalSwipe: boolean | null = null;
+  private thresholdVibrated = false;
+
   // Expose isMobile detector property for templates
   get isMobile(): boolean {
     if (typeof window === 'undefined') return false;
@@ -170,8 +181,8 @@ export class App {
   }
 
   async selectCustomer(customer: Customer) {
-    if (this.isLongPressTriggered || this.quickMenuData()) {
-      return; // Ignore regular click if long press context menu was triggered
+    if (this.isLongPressTriggered || this.quickMenuData() || Math.abs(this.swipeOffset()) > 15) {
+      return; // Ignore regular click if long press or swipe gesture was triggered
     }
 
     this.selectedCustomer.set(customer);
@@ -179,6 +190,106 @@ export class App {
       const visits = await this.cs.getCustomerVisits(customer.id);
       this.selectedCustomerVisits.set(visits);
     }
+  }
+
+  // --- SWIPE GESTURES LOGIC ---
+
+  getSwipeOffsetFor(customerId?: number): number {
+    if (!customerId || this.activeSwipedCustomerId() !== customerId) return 0;
+    return this.swipeOffset();
+  }
+
+  isCustomerSwiping(customerId?: number): boolean {
+    return Boolean(customerId && this.activeSwipedCustomerId() === customerId && this.isSwiping());
+  }
+
+  onSwipeTouchStart(event: TouchEvent, customer: Customer) {
+    if (!customer.id || event.touches.length !== 1) return;
+    const touch = event.touches[0];
+    this.swipeStartX = touch.clientX;
+    this.swipeStartY = touch.clientY;
+    this.isHorizontalSwipe = null;
+    this.thresholdVibrated = false;
+    this.activeSwipedCustomerId.set(customer.id);
+    this.isSwiping.set(true);
+  }
+
+  onSwipeTouchMove(event: TouchEvent, customer: Customer) {
+    if (!customer.id || !this.isSwiping() || this.activeSwipedCustomerId() !== customer.id) return;
+    const touch = event.touches[0];
+    const deltaX = touch.clientX - this.swipeStartX;
+    const deltaY = touch.clientY - this.swipeStartY;
+
+    if (this.isHorizontalSwipe === null) {
+      if (Math.abs(deltaX) > 6 || Math.abs(deltaY) > 6) {
+        this.isHorizontalSwipe = Math.abs(deltaX) > Math.abs(deltaY);
+        if (this.isHorizontalSwipe && this.longPressTimer) {
+          clearTimeout(this.longPressTimer);
+          this.longPressTimer = null;
+        }
+      }
+    }
+
+    if (this.isHorizontalSwipe === true) {
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+      let offset = deltaX;
+      if (offset < -120) offset = -120 + (offset + 120) * 0.2;
+      if (offset > 120) offset = 120 + (offset - 120) * 0.2;
+
+      this.swipeOffset.set(offset);
+
+      if (!this.thresholdVibrated && Math.abs(offset) >= 75) {
+        this.triggerHapticFeedback();
+        this.thresholdVibrated = true;
+      } else if (this.thresholdVibrated && Math.abs(offset) < 60) {
+        this.thresholdVibrated = false;
+      }
+    }
+  }
+
+  onSwipeTouchEnd(customer: Customer) {
+    if (!customer.id || !this.isSwiping() || this.activeSwipedCustomerId() !== customer.id) return;
+
+    const finalOffset = this.swipeOffset();
+    this.isSwiping.set(false);
+
+    if (finalOffset <= -75) {
+      // Swipe Left -> Delete Action
+      this.triggerHapticFeedback();
+      this.confirmDeleteCustomer(customer);
+    } else if (finalOffset >= 75) {
+      // Swipe Right -> Edit Action
+      this.triggerHapticFeedback();
+      this.selectCustomer(customer);
+    }
+
+    this.swipeOffset.set(0);
+    setTimeout(() => {
+      if (this.activeSwipedCustomerId() === customer.id) {
+        this.activeSwipedCustomerId.set(null);
+      }
+    }, 200);
+  }
+
+  confirmDeleteCustomer(customer: Customer) {
+    this.customerToDelete.set(customer);
+  }
+
+  cancelDeleteCustomer() {
+    this.customerToDelete.set(null);
+  }
+
+  async proceedDeleteCustomer() {
+    const cust = this.customerToDelete();
+    if (cust && cust.id) {
+      await this.cs.deleteCustomer(cust.id);
+      if (this.selectedCustomer()?.id === cust.id) {
+        this.closeDetail();
+      }
+    }
+    this.customerToDelete.set(null);
   }
 
   // --- QUICK ACTIONS / LONG PRESS LOGIC ---

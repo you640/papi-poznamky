@@ -177,68 +177,97 @@
              </div>
           }
 
-          <!-- Karta zákazníka -->
-          <div 
-            #customerItem
-            (click)="selectCustomer(customer)"
-            (pointerdown)="onPointerDown($event, customer)"
-            (pointerup)="onPointerUp()"
-            (pointercancel)="onPointerUp()"
-            (contextmenu)="onContextMenu($event)"
-            (keydown.enter)="selectCustomer(customer)"
-            tabindex="0"
-            [class.border-papi-gold/40]="selectedCustomer()?.id === customer.id"
-            [class.bg-[#111112]]="selectedCustomer()?.id === customer.id"
-            [class.bg-white/[0.02]]="selectedCustomer()?.id !== customer.id"
-            class="group border border-white/5 p-4 rounded-[20px] cursor-pointer transition-all duration-300 flex justify-between items-center opacity-0 translate-y-4 hover:border-papi-gold/20 hover:bg-[#111112] shadow-sm relative overflow-hidden">
+          <!-- Karta zákazníka s gestami potiahnutia (Swipe Actions) -->
+          <div class="relative overflow-hidden rounded-[20px] my-1 touch-pan-y">
             
-            @if (selectedCustomer()?.id === customer.id) {
-              <div class="absolute inset-0 bg-gradient-to-r from-[#D8B589]/5 to-transparent pointer-events-none"></div>
-            }
+            <!-- Akcia pri potiahnutí DOPRAVA (Upraviť / Detail) -->
+            <button 
+              type="button"
+              (click)="selectCustomer(customer)"
+              class="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-papi-gold/30 via-papi-gold/15 to-transparent flex items-center pl-4 text-papi-gold font-medium text-xs rounded-l-[20px] z-0 cursor-pointer border-0 outline-none text-left">
+              <mat-icon class="mr-1.5 text-base flex items-center justify-center">edit</mat-icon>
+              <span>Upraviť</span>
+            </button>
 
-            <div class="flex items-center gap-4 relative z-10 min-w-0 pr-2">
-              <div [class.border-papi-gold]="selectedCustomer()?.id === customer.id"
-                   [class.text-papi-gold]="selectedCustomer()?.id === customer.id"
-                   [class.border-white/10]="selectedCustomer()?.id !== customer.id"
-                   [class.text-white/40]="selectedCustomer()?.id !== customer.id"
-                   class="w-11 h-11 rounded-full flex items-center justify-center font-light text-sm border bg-black shrink-0 font-display transition-colors overflow-hidden relative">
-                @if (customer.photo) {
-                  <img [src]="customer.photo" [alt]="customer.name" class="w-full h-full object-cover rounded-full" loading="lazy" decoding="async" />
-                } @else {
-                  {{ getInitials(customer) }}
-                }
-              </div>
-              <div class="flex flex-col select-text select-all min-w-0">
-                <h3 [class.text-papi-gold]="selectedCustomer()?.id === customer.id"
-                    [class.text-white/90]="selectedCustomer()?.id !== customer.id"
-                    class="text-[15px] font-medium tracking-tight mb-1 transition-colors leading-none truncate">
-                  {{ customer.name }} {{ customer.lastName }}
-                </h3>
-                <div class="flex items-center gap-2 flex-wrap">
-                  @if (customer.phone) {
-                    <span class="text-white/40 text-[11px] font-light">{{ customer.phone }}</span>
-                  }
-                  @if (customer.notes) {
-                    <span class="text-papi-gold/90 bg-papi-gold/10 border border-papi-gold/20 px-2 py-0.5 rounded-md text-[10px] font-mono truncate max-w-[170px] sm:max-w-[240px] md:max-w-[320px]">
-                      {{ customer.notes }}
-                    </span>
+            <!-- Akcia pri potiahnutí DOĽAVA (Zmazať) -->
+            <button 
+              type="button"
+              (click)="confirmDeleteCustomer(customer)"
+              class="absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-red-600/40 via-red-500/20 to-transparent flex items-center justify-end pr-4 text-red-400 font-medium text-xs rounded-r-[20px] z-0 cursor-pointer border-0 outline-none text-right">
+              <span>Zmazať</span>
+              <mat-icon class="ml-1.5 text-base flex items-center justify-center">delete</mat-icon>
+            </button>
+
+            <!-- Popredná karta klienta -->
+            <div 
+              #customerItem
+              (click)="selectCustomer(customer)"
+              (pointerdown)="onPointerDown($event, customer)"
+              (pointerup)="onPointerUp()"
+              (pointercancel)="onPointerUp()"
+              (touchstart)="onSwipeTouchStart($event, customer)"
+              (touchmove)="onSwipeTouchMove($event, customer)"
+              (touchend)="onSwipeTouchEnd(customer)"
+              (touchcancel)="onSwipeTouchEnd(customer)"
+              (contextmenu)="onContextMenu($event)"
+              (keydown.enter)="selectCustomer(customer)"
+              tabindex="0"
+              [style.transform]="'translateX(' + getSwipeOffsetFor(customer.id) + 'px)'"
+              [class.transition-transform]="!isCustomerSwiping(customer.id)"
+              [class.duration-200]="!isCustomerSwiping(customer.id)"
+              [class.border-papi-gold/40]="selectedCustomer()?.id === customer.id"
+              [class.bg-[#111112]]="selectedCustomer()?.id === customer.id"
+              [class.bg-[#0e0e10]]="selectedCustomer()?.id !== customer.id"
+              class="group border border-white/5 p-4 rounded-[20px] cursor-pointer transition-colors duration-300 flex justify-between items-center opacity-0 translate-y-4 hover:border-papi-gold/20 hover:bg-[#111112] shadow-sm relative z-10 select-none">
+              
+              @if (selectedCustomer()?.id === customer.id) {
+                <div class="absolute inset-0 bg-gradient-to-r from-[#D8B589]/5 to-transparent pointer-events-none"></div>
+              }
+
+              <div class="flex items-center gap-4 relative z-10 min-w-0 pr-2 pointer-events-none">
+                <div [class.border-papi-gold]="selectedCustomer()?.id === customer.id"
+                     [class.text-papi-gold]="selectedCustomer()?.id === customer.id"
+                     [class.border-white/10]="selectedCustomer()?.id !== customer.id"
+                     [class.text-white/40]="selectedCustomer()?.id !== customer.id"
+                     class="w-11 h-11 rounded-full flex items-center justify-center font-light text-sm border bg-black shrink-0 font-display transition-colors overflow-hidden relative">
+                  @if (customer.photo) {
+                    <img [src]="customer.photo" [alt]="customer.name" class="w-full h-full object-cover rounded-full" loading="lazy" decoding="async" />
+                  } @else {
+                    {{ getInitials(customer) }}
                   }
                 </div>
+                <div class="flex flex-col min-w-0">
+                  <h3 [class.text-papi-gold]="selectedCustomer()?.id === customer.id"
+                      [class.text-white/90]="selectedCustomer()?.id !== customer.id"
+                      class="text-[15px] font-medium tracking-tight mb-1 transition-colors leading-none truncate">
+                    {{ customer.name }} {{ customer.lastName }}
+                  </h3>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    @if (customer.phone) {
+                      <span class="text-white/40 text-[11px] font-light">{{ customer.phone }}</span>
+                    }
+                    @if (customer.notes) {
+                      <span class="text-papi-gold/90 bg-papi-gold/10 border border-papi-gold/20 px-2 py-0.5 rounded-md text-[10px] font-mono truncate max-w-[170px] sm:max-w-[240px] md:max-w-[320px]">
+                        {{ customer.notes }}
+                      </span>
+                    }
+                  </div>
+                </div>
               </div>
+              @if (cs.sortBy() === 'mostFrequent') {
+                <div class="text-right relative z-10 shrink-0 pointer-events-none">
+                  <div class="text-[9px] text-[#D8B589] opacity-70 uppercase tracking-[0.1em] font-medium mb-0.5">Návštevy</div>
+                  <div class="text-[12px] text-white/80 font-bold tracking-wide flex items-center justify-end gap-0.5 bg-papi-gold/5 px-2 py-0.5 rounded-lg border border-papi-gold/10">
+                    <span class="text-papi-gold">{{ cs.getVisitCount(customer.id) }}</span><span class="text-[9px] text-white/40">x</span>
+                  </div>
+                </div>
+              } @else if (customer.lastVisit) {
+                <div class="text-right relative z-10 shrink-0 pointer-events-none">
+                  <div class="text-[9px] text-[#D8B589] opacity-70 uppercase tracking-[0.1em] font-medium mb-1">Posledná</div>
+                  <div class="text-[11px] text-white/50">{{ customer.lastVisit | date:'dd.MM.yy' }}</div>
+                </div>
+              }
             </div>
-            @if (cs.sortBy() === 'mostFrequent') {
-              <div class="text-right relative z-10 shrink-0">
-                <div class="text-[9px] text-[#D8B589] opacity-70 uppercase tracking-[0.1em] font-medium mb-0.5">Návštevy</div>
-                <div class="text-[12px] text-white/80 font-bold tracking-wide flex items-center justify-end gap-0.5 bg-papi-gold/5 px-2 py-0.5 rounded-lg border border-papi-gold/10">
-                  <span class="text-papi-gold">{{ cs.getVisitCount(customer.id) }}</span><span class="text-[9px] text-white/40">x</span>
-                </div>
-              </div>
-            } @else if (customer.lastVisit) {
-              <div class="text-right relative z-10 shrink-0">
-                <div class="text-[9px] text-[#D8B589] opacity-70 uppercase tracking-[0.1em] font-medium mb-1">Posledná</div>
-                <div class="text-[11px] text-white/50">{{ customer.lastVisit | date:'dd.MM.yy' }}</div>
-              </div>
-            }
           </div>
         } @empty {
           <!-- Beautiful empty state! -->
@@ -640,6 +669,42 @@
             (click)="closeCleanupModal()"
             class="w-full bg-white/5 hover:bg-white/10 border border-white/5 text-gray-400 font-medium py-3 rounded-xl transition-all text-xs tracking-wider uppercase">
             {{ cleanupReport() ? 'HOTOVO' : 'ZRUŠIŤ' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- SINGLE CUSTOMER DELETE CONFIRMATION MODAL -->
+  @if (customerToDelete(); as cust) {
+    <div class="fixed inset-0 z-[170] flex items-end md:items-center justify-center bg-black/80 backdrop-blur-md md:p-4 animate-in fade-in duration-200">
+      <div class="bg-[#0e0e0f] border-t md:border border-red-500/30 md:rounded-3xl rounded-t-3xl rounded-b-none w-full max-w-sm p-6 shadow-2xl flex flex-col animate-in slide-in-from-bottom-full md:zoom-in-95 duration-300 pb-[calc(1.5rem+env(safe-area-inset-bottom))] text-center relative overflow-hidden">
+        
+        <div class="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-red-500/50 to-transparent"></div>
+        <div class="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-48 bg-red-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="mx-auto w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 mb-4 shadow-inner">
+          <mat-icon class="text-[28px] w-auto h-auto">delete</mat-icon>
+        </div>
+
+        <h2 class="text-lg font-bold font-display text-white mb-1.5">Zmazať zákazníka?</h2>
+        
+        <p class="text-white/60 text-xs leading-relaxed mb-6 font-light">
+          Naozaj chcete zmazať zákazníka <strong class="text-white">{{ cust.name }} {{ cust.lastName }}</strong>?
+          Tento krok natrvalo odstráni jeho klientsku kartu a históriu návštev.
+        </p>
+
+        <div class="flex items-center gap-3 w-full font-sans">
+          <button 
+            (click)="cancelDeleteCustomer()"
+            class="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 font-medium py-3 rounded-xl transition-all text-xs tracking-wider uppercase cursor-pointer">
+            Zrušiť
+          </button>
+          
+          <button 
+            (click)="proceedDeleteCustomer()"
+            class="flex-1 bg-gradient-to-r from-red-600 to-rose-600 hover:opacity-90 active:scale-[0.98] text-white font-semibold py-3 rounded-xl transition-all shadow-lg shadow-red-600/30 text-xs tracking-wider uppercase cursor-pointer flex items-center justify-center gap-1.5">
+            <mat-icon class="text-[16px]">delete</mat-icon> Zmazať
           </button>
         </div>
       </div>
