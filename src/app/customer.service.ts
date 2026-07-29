@@ -1,5 +1,5 @@
 import { Injectable, signal, computed } from '@angular/core';
-import { db, type Customer, type Visit } from './db';
+import { db, type Customer, type Visit, type FormulaEntry } from './db';
 import { liveQuery } from 'dexie';
 
 @Injectable({
@@ -101,23 +101,30 @@ export class CustomerService {
   }
 
   async addCustomer(customer: Omit<Customer, 'id'>) {
-    return await db.customers.add(customer as Customer);
+    const newCust = customer as Customer;
+    const id = await db.customers.add(newCust);
+    const created = { ...newCust, id };
+    this.customersList.update(list => {
+      if (list.some(c => c.id === id)) return list;
+      return [...list, created];
+    });
+    return id;
   }
 
   findPotentialDuplicates(name: string, lastName: string, phone?: string, excludeId?: number): Customer[] {
-    const normName = name.toLowerCase().trim();
-    const normLast = lastName.toLowerCase().trim();
-    const normPhone = (phone || '').replace(/\s+/g, '');
+    const normName = this.normalizeNameStr(name);
+    const normLast = this.normalizeNameStr(lastName);
+    const normPhone = this.normalizePhone(phone);
 
     return this.customersList().filter(c => {
       if (excludeId && c.id === excludeId) return false;
       
-      const cName = c.name.toLowerCase().trim();
-      const cLast = c.lastName.toLowerCase().trim();
-      const cPhone = (c.phone || '').replace(/\s+/g, '');
+      const cName = this.normalizeNameStr(c.name);
+      const cLast = this.normalizeNameStr(c.lastName);
+      const cPhone = this.normalizePhone(c.phone);
 
       // Check phone match
-      if (normPhone && cPhone && normPhone === cPhone) return true;
+      if (normPhone && cPhone && normPhone.length >= 6 && normPhone === cPhone) return true;
 
       // Check full name match
       if (normName && normLast && cName === normName && cLast === normLast) return true;
@@ -129,11 +136,240 @@ export class CustomerService {
     });
   }
 
+  /**
+   * Helper to normalize phone numbers for comparison
+   */
+  normalizePhone(phone?: string): string {
+    if (!phone) return '';
+    let cleaned = phone.replace(/[^\d+]/g, '');
+    if (cleaned.startsWith('+421')) {
+      cleaned = '0' + cleaned.substring(4);
+    }
+    return cleaned;
+  }
+
+  /**
+   * Helper to normalize names (strips accents, lowercases, trims)
+   */
+  normalizeNameStr(str?: string): string {
+    if (!str) return '';
+    return str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+  }
+
+  /**
+   * Finds all duplicate groups across the database based on phone numbers and names
+   */
+  async findDuplicateGroups(): Promise<Customer[][]> {
+    const allCustomers = await db.customers.toArray();
+    const visitedIds = new Set<number>();
+    const groups: Customer[][] = [];
+
+    for (let i = 0; i < allCustomers.length; i++) {
+      const c1 = allCustomers[i];
+      if (!c1.id || visitedIds.has(c1.id)) continue;
+
+      const group: Customer[] = [c1];
+      const p1 = this.normalizePhone(c1.phone);
+      const fn1 = this.normalizeNameStr(c1.name);
+      const ln1 = this.normalizeNameStr(c1.lastName);
+
+      for (let j = i + 1; j < allCustomers.length; j++) {
+        const c2 = allCustomers[j];
+        if (!c2.id || visitedIds.has(c2.id)) continue;
+
+        const p2 = this.normalizePhone(c2.phone);
+        const fn2 = this.normalizeNameStr(c2.name);
+        const ln2 = this.normalizeNameStr(c2.lastName);
+
+        let isMatch = false;
+
+        // Match 1: Phone numbers match (if valid phone with >= 6 digits)
+        if (p1 && p2 && p1.length >= 6 && p1 === p2) {
+          isMatch = true;
+        }
+
+        // Match 2: Full name matches exactly
+        if (!isMatch && fn1 && fn2 && fn1 === fn2) {
+          if (ln1 && ln2 && ln1 === ln2) {
+            isMatch = true;
+          } else if (!ln1 && !ln2) {
+            isMatch = true;
+          }
+        }
+
+        // Match 3: Swapped first/last name
+        if (!isMatch && fn1 && ln1 && fn2 && ln2 && fn1 === ln2 && ln1 === fn2) {
+          isMatch = true;
+        }
+
+        if (isMatch) {
+          group.push(c2);
+        }
+      }
+
+      if (group.length > 1) {
+        group.forEach(c => visitedIds.add(c.id!));
+        groups.push(group);
+      }
+    }
+
+    return groups;
+  }
+
+  /**
+   * Merges duplicate customer records into primary record, re-linking visits and combining metadata
+   */
+  async mergeDuplicateGroup(primaryId: number, duplicateIds: number[]): Promise<{ reassignedVisits: number }> {
+    let reassignedVisitsCount = 0;
+
+    const primary = await db.customers.get(primaryId);
+    if (!primary) return { reassignedVisits: 0 };
+
+    const duplicates = await db.customers.bulkGet(duplicateIds);
+    const validDuplicates = duplicates.filter((d): d is Customer => !!d && d.id !== primaryId);
+
+    if (validDuplicates.length === 0) return { reassignedVisits: 0 };
+
+    // 1. Gather all tags
+    const allTagsSet = new Set<string>(primary.tags || []);
+    validDuplicates.forEach(d => {
+      (d.tags || []).forEach(t => allTagsSet.add(t));
+    });
+
+    // 2. Gather non-duplicate notes
+    const existingNotes = (primary.notes || '').trim();
+    const notesParts: string[] = existingNotes ? [existingNotes] : [];
+    validDuplicates.forEach(d => {
+      const dNote = (d.notes || '').trim();
+      if (dNote && !notesParts.some(np => np.includes(dNote) || dNote.includes(np))) {
+        notesParts.push(dNote);
+      }
+    });
+
+    // 3. Gather formulas
+    const formulaMap = new Map<string, FormulaEntry>();
+    (primary.formulas || []).forEach(f => formulaMap.set(f.id, f));
+    validDuplicates.forEach(d => {
+      (d.formulas || []).forEach(f => {
+        if (!formulaMap.has(f.id)) {
+          formulaMap.set(f.id, f);
+        }
+      });
+    });
+
+    // 4. Fill missing phone, email, photo, name
+    let phone = primary.phone || '';
+    let email = primary.email || '';
+    let photo = primary.photo || '';
+    let name = primary.name || '';
+    let lastName = primary.lastName || '';
+
+    validDuplicates.forEach(d => {
+      if (!phone && d.phone) phone = d.phone;
+      if (!email && d.email) email = d.email;
+      if (!photo && d.photo) photo = d.photo;
+      if (!lastName && d.lastName) lastName = d.lastName;
+      if (name.length < (d.name || '').length) name = d.name;
+    });
+
+    // 5. Pick latest lastVisit date
+    let lastVisit = primary.lastVisit ? new Date(primary.lastVisit) : undefined;
+    validDuplicates.forEach(d => {
+      if (d.lastVisit) {
+        const dDate = new Date(d.lastVisit);
+        if (!lastVisit || dDate > lastVisit) {
+          lastVisit = dDate;
+        }
+      }
+    });
+
+    const validDupIds = validDuplicates.map(d => d.id!).filter(Boolean);
+
+    // Reassign visits for all duplicate customers to primaryId
+    for (const dupId of validDupIds) {
+      const count = await db.visits.where('customerId').equals(dupId).modify({ customerId: primaryId });
+      reassignedVisitsCount += count;
+    }
+
+    // Update primary customer with consolidated data
+    await db.customers.update(primaryId, {
+      name,
+      lastName,
+      phone,
+      email,
+      photo,
+      tags: Array.from(allTagsSet),
+      notes: notesParts.join(' | '),
+      formulas: Array.from(formulaMap.values()),
+      lastVisit
+    });
+
+    // Delete duplicate customer records
+    await db.customers.bulkDelete(validDupIds);
+
+    return { reassignedVisits: reassignedVisitsCount };
+  }
+
+  /**
+   * Cleanup operation that scans for duplicates and merges them automatically, maintaining data integrity
+   */
+  async cleanupDuplicates(): Promise<{ mergedGroupsCount: number; removedDuplicatesCount: number; reassignedVisitsCount: number }> {
+    const duplicateGroups = await this.findDuplicateGroups();
+    let mergedGroupsCount = 0;
+    let removedDuplicatesCount = 0;
+    let totalReassignedVisits = 0;
+
+    for (const group of duplicateGroups) {
+      if (group.length < 2) continue;
+
+      // Select primary: the record with the most complete info or lowest id
+      const sorted = [...group].sort((a, b) => {
+        const scoreA = (a.photo ? 5 : 0) + (a.email ? 3 : 0) + (a.phone ? 3 : 0) + (a.notes ? 2 : 0) + (a.formulas?.length || 0);
+        const scoreB = (b.photo ? 5 : 0) + (b.email ? 3 : 0) + (b.phone ? 3 : 0) + (b.notes ? 2 : 0) + (b.formulas?.length || 0);
+        if (scoreB !== scoreA) return scoreB - scoreA;
+        return (a.id || 0) - (b.id || 0);
+      });
+
+      const primary = sorted[0];
+      const dupIds = sorted.slice(1).map(c => c.id!).filter(Boolean);
+
+      const res = await this.mergeDuplicateGroup(primary.id!, dupIds);
+      mergedGroupsCount++;
+      removedDuplicatesCount += dupIds.length;
+      totalReassignedVisits += res.reassignedVisits;
+    }
+
+    return {
+      mergedGroupsCount,
+      removedDuplicatesCount,
+      reassignedVisitsCount: totalReassignedVisits
+    };
+  }
+
+  private searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+  setSearchQueryDebounced(query: string, delay = 150) {
+    if (this.searchDebounceTimer) {
+      clearTimeout(this.searchDebounceTimer);
+    }
+    this.searchDebounceTimer = setTimeout(() => {
+      this.searchQuery.set(query);
+    }, delay);
+  }
+
   async updateCustomer(id: number, changes: Partial<Customer>) {
+    this.customersList.update(list =>
+      list.map(c => c.id === id ? { ...c, ...changes } : c)
+    );
     return await db.customers.update(id, changes);
   }
 
   async deleteCustomer(id: number) {
+    this.customersList.update(list => list.filter(c => c.id !== id));
     return await db.customers.delete(id);
   }
 
@@ -153,8 +389,16 @@ export class CustomerService {
   }
 
   async addVisit(visit: Omit<Visit, 'id'>) {
+    if (visit.customerId) {
+      this.visitCounts.update(counts => ({
+        ...counts,
+        [visit.customerId]: (counts[visit.customerId] || 0) + 1
+      }));
+      this.customersList.update(list =>
+        list.map(c => c.id === visit.customerId ? { ...c, lastVisit: visit.date } : c)
+      );
+    }
     const visitId = await db.visits.add(visit as Visit);
-    // Update last visit date on customer
     await db.customers.update(visit.customerId, { lastVisit: visit.date });
     return visitId;
   }

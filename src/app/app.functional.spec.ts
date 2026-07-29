@@ -177,5 +177,81 @@ describe('Papi CRM Functional Logic & E2E Unit Tests', () => {
     const updated = await db.customers.get(sofia.id!);
     expect(updated?.photo).toBe(dummyBase64Photo);
   });
+
+  it('should identify duplicate customers based on name or phone', async () => {
+    // Add two duplicate records for E2E Test
+    const dup1Id = await service.addCustomer({
+      name: 'Mária',
+      lastName: 'Testovacia',
+      phone: '0905 123 999',
+      tags: ['Farbenie'],
+      notes: 'Pôvodná poznámka'
+    });
+
+    const dup2Id = await service.addCustomer({
+      name: 'Maria',
+      lastName: 'Testovacia',
+      phone: '0905123999',
+      tags: ['Tónovanie', 'VIP'],
+      notes: 'Druhá poznámka z druhého záznamu'
+    });
+
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    const duplicateGroups = await service.findDuplicateGroups();
+    const group = duplicateGroups.find(g => g.some(c => c.id === dup1Id || c.id === dup2Id));
+    
+    expect(group).toBeDefined();
+    expect(group?.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('should merge duplicate customer records and reassign visits preserving data integrity', async () => {
+    const mainId = await service.addCustomer({
+      name: 'Zuzana',
+      lastName: 'Duplicitná',
+      phone: '0918 888 777',
+      tags: ['Farbenie'],
+      notes: 'Hlavná poznámka'
+    });
+
+    const duplicateId = await service.addCustomer({
+      name: 'Zuzana',
+      lastName: 'Duplicitna',
+      phone: '0918 888 777',
+      tags: ['VIP'],
+      notes: 'Doplnková poznámka'
+    });
+
+    // Add a visit to the duplicate record
+    await service.addVisit({
+      customerId: duplicateId,
+      date: new Date(),
+      service: 'Tónovanie blond',
+      price: 45,
+      note: 'Návšteva u duplicitného profilu'
+    });
+
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Run cleanup operation
+    const result = await service.cleanupDuplicates();
+    expect(result.mergedGroupsCount).toBeGreaterThan(0);
+    expect(result.removedDuplicatesCount).toBeGreaterThan(0);
+
+    // Verify duplicate record is removed
+    const removedDup = await db.customers.get(duplicateId);
+    expect(removedDup).toBeUndefined();
+
+    // Verify main customer is updated with merged tags and notes
+    const mainCustomer = await db.customers.get(mainId);
+    expect(mainCustomer).toBeDefined();
+    expect(mainCustomer?.tags).toContain('Farbenie');
+    expect(mainCustomer?.tags).toContain('VIP');
+    expect(mainCustomer?.notes).toContain('Doplnková poznámka');
+
+    // Verify visit was reassigned to main customer
+    const mainVisits = await service.getCustomerVisits(mainId);
+    expect(mainVisits.some(v => v.service === 'Tónovanie blond')).toBe(true);
+  });
 });
 

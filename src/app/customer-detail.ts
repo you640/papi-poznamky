@@ -3,6 +3,7 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import type { Customer, Visit } from './db';
+import { compressImage } from './image-utils';
 
 @Component({
   standalone: true,
@@ -155,7 +156,7 @@ export class CustomerDetailComponent {
     this.startCameraStream();
   }
 
-  takePhoto() {
+  async takePhoto() {
     const videoEl = document.getElementById('cameraFeedVideo') as HTMLVideoElement;
     if (!videoEl) return;
 
@@ -171,9 +172,16 @@ export class CustomerDetailComponent {
     if (ctx) {
       const startX = (width - size) / 2;
       const startY = (height - size) / 2;
+      
+      if (this.facingMode() === 'user') {
+        ctx.translate(size, 0);
+        ctx.scale(-1, 1);
+      }
+
       ctx.drawImage(videoEl, startX, startY, size, size, 0, 0, size, size);
       const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-      this.capturedPhoto.set(dataUrl);
+      const compressed = await compressImage(dataUrl, 800, 800, 0.82);
+      this.capturedPhoto.set(compressed);
       this.stopCameraStream();
     }
   }
@@ -188,13 +196,19 @@ export class CustomerDetailComponent {
     const c = this.customer();
     if (c && c.id && photo !== null) {
       this.editPhoto.set(photo);
+
+      const tagsArray = this.editTags()
+        .split(',')
+        .map(t => t.trim())
+        .filter(t => t.length > 0);
+
       this.save.emit({
         id: c.id,
         name: this.editName().trim() || c.name,
         lastName: this.editLastName().trim() || c.lastName,
         phone: this.editPhone().trim() || c.phone,
         email: this.editEmail().trim() || c.email || '',
-        tags: c.tags,
+        tags: tagsArray.length > 0 ? tagsArray : (c.tags || []),
         notes: this.editNotes() || c.notes || '',
         photo: photo
       });
@@ -206,13 +220,19 @@ export class CustomerDetailComponent {
     const c = this.customer();
     if (c && c.id) {
       this.editPhoto.set('');
+
+      const tagsArray = this.editTags()
+        .split(',')
+        .map(t => t.trim())
+        .filter(t => t.length > 0);
+
       this.save.emit({
         id: c.id,
         name: this.editName().trim() || c.name,
         lastName: this.editLastName().trim() || c.lastName,
         phone: this.editPhone().trim() || c.phone,
         email: this.editEmail().trim() || c.email || '',
-        tags: c.tags,
+        tags: tagsArray.length > 0 ? tagsArray : (c.tags || []),
         notes: this.editNotes() || c.notes || '',
         photo: ''
       });
@@ -220,19 +240,17 @@ export class CustomerDetailComponent {
     }
   }
 
-  onFileUpload(event: Event) {
+  async onFileUpload(event: Event) {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        if (result) {
-          this.capturedPhoto.set(result);
-          this.stopCameraStream();
-        }
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressed = await compressImage(file, 800, 800, 0.82);
+        this.capturedPhoto.set(compressed);
+        this.stopCameraStream();
+      } catch (err) {
+        console.warn('Compress error:', err);
+      }
     }
   }
 

@@ -53,6 +53,10 @@
         <mat-icon class="text-[18px]">sync</mat-icon>
       </button>
 
+      <button (click)="openCleanupModal()" class="circle-btn border-papi-gold/20 text-papi-gold hover:bg-papi-gold/10 hover:border-papi-gold/40" title="Vyčistiť duplicity klientov">
+        <mat-icon class="text-[18px]">cleaning_services</mat-icon>
+      </button>
+
       <button (click)="openWipeModal()" class="circle-btn border-red-500/10 text-red-500 hover:bg-red-500/10 hover:border-red-500/40" title="Vymazať celú databázu">
         <mat-icon class="text-[18px]">delete_sweep</mat-icon>
       </button>
@@ -66,6 +70,38 @@
       </button>
     </div>
   </header>
+
+  <!-- OFFLINE STATUS BANNER -->
+  @if (isOffline()) {
+    <div class="bg-amber-500/10 border-y border-amber-500/20 px-4 py-2 text-xs text-amber-300 flex items-center justify-between shrink-0 z-40">
+      <div class="flex items-center gap-2">
+        <mat-icon class="text-amber-400 text-sm flex items-center justify-center">wifi_off</mat-icon>
+        <span><strong>Offline režim</strong> – Všetky dáta sú lokálne uložené a plne dostupné bez siete.</span>
+      </div>
+    </div>
+  }
+
+  <!-- PWA INSTALL BANNER -->
+  @if (deferredInstallPrompt() && !isStandalone() && !installBannerDismissed()) {
+    <div class="bg-papi-gold/10 border-y border-papi-gold/30 px-4 py-2.5 text-xs text-papi-gold-light flex items-center justify-between shrink-0 z-40 gap-3">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <img src="/icon-192.svg" alt="Papi CRM" class="w-6 h-6 rounded-md shrink-0" />
+        <span class="truncate">Nainštalujte si <strong>Papi CRM</strong> na plochu pre bleskový 60 FPS prístup a offline funkčnosť.</span>
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <button 
+          (click)="installPwaApp()" 
+          class="px-3 py-1 bg-papi-gold text-black rounded-full font-semibold text-[11px] hover:bg-papi-gold-light transition-colors shadow-sm cursor-pointer">
+          Nainštalovať
+        </button>
+        <button 
+          (click)="dismissInstallBanner()" 
+          class="p-1 text-white/40 hover:text-white transition-colors cursor-pointer">
+          <mat-icon class="text-sm flex items-center justify-center">close</mat-icon>
+        </button>
+      </div>
+    </div>
+  }
 
   <!-- MAIN CONTENT SPLIT -->
   <main class="flex flex-1 overflow-hidden relative">
@@ -167,7 +203,7 @@
                    [class.text-white/40]="selectedCustomer()?.id !== customer.id"
                    class="w-11 h-11 rounded-full flex items-center justify-center font-light text-sm border bg-black shrink-0 font-display transition-colors overflow-hidden relative">
                 @if (customer.photo) {
-                  <img [src]="customer.photo" [alt]="customer.name" class="w-full h-full object-cover rounded-full" />
+                  <img [src]="customer.photo" [alt]="customer.name" class="w-full h-full object-cover rounded-full" loading="lazy" decoding="async" />
                 } @else {
                   {{ getInitials(customer) }}
                 }
@@ -317,6 +353,26 @@
           <div>
             <label for="newCustTags" class="text-[10px] text-gray-500 uppercase font-bold ml-1">Značky (čiarkou oddelené)</label>
             <input id="newCustTags" [(ngModel)]="newCust.tags" class="w-full mt-1 bg-papi-gray/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-papi-gold/50 select-text" placeholder="">
+          </div>
+
+          <!-- Photo upload field for new customer -->
+          <div class="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-xl">
+            <div class="w-10 h-10 rounded-full overflow-hidden bg-black border border-papi-gold/30 shrink-0 flex items-center justify-center text-papi-gold text-xs font-bold">
+              @if (newCust.photo) {
+                <img [src]="newCust.photo" alt="Fotka" class="w-full h-full object-cover" />
+              } @else {
+                <mat-icon class="text-[18px]">person</mat-icon>
+              }
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-semibold text-white">Fotografia</div>
+              <div class="text-[10px] text-gray-400">Voliteľná fotka klienta</div>
+            </div>
+            <label class="px-3 py-1.5 rounded-lg bg-papi-gold/15 border border-papi-gold/30 text-papi-gold hover:bg-papi-gold hover:text-black transition-all text-xs font-medium cursor-pointer flex items-center gap-1">
+              <mat-icon class="text-[14px]">upload</mat-icon>
+              <span>{{ newCust.photo ? 'Zmeniť' : 'Nahrať' }}</span>
+              <input type="file" accept="image/*" (change)="onNewCustPhotoUpload($event)" class="hidden" />
+            </label>
           </div>
           <button 
              (click)="saveNewCustomer()" 
@@ -528,6 +584,62 @@
             (click)="closeWipeModal()"
             class="w-full bg-white/5 hover:bg-white/10 border border-white/5 text-gray-400 font-medium py-3 rounded-xl transition-all text-xs tracking-wider uppercase">
             Zrušiť
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- CLEANUP DUPLICATES MODAL -->
+  @if (isCleanupModalOpen()) {
+    <div class="fixed inset-0 z-[160] flex items-end md:items-center justify-center bg-black/80 backdrop-blur-md md:p-4 animate-in fade-in duration-200">
+      <div class="bg-[#0e0e0f] border-t md:border border-papi-gold/30 md:rounded-3xl rounded-t-3xl rounded-b-none w-full max-w-sm p-6 shadow-2xl flex flex-col animate-in slide-in-from-bottom-full md:zoom-in-95 duration-300 pb-[calc(1.5rem+env(safe-area-inset-bottom))] max-h-[90vh] overflow-y-auto custom-scrollbar text-center relative overflow-hidden">
+        
+        <div class="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-papi-gold/50 to-transparent"></div>
+
+        <div class="mx-auto w-16 h-16 rounded-2xl bg-papi-gold/10 border border-papi-gold/20 flex items-center justify-center text-papi-gold mb-6 shadow-inner">
+          <mat-icon class="text-[32px] w-auto h-auto">cleaning_services</mat-icon>
+        </div>
+
+        <h2 class="text-xl font-bold font-display text-white mb-2">Vyčistenie duplicitných klientov</h2>
+        
+        <p class="text-white/60 text-xs leading-relaxed mb-6 font-light">
+          Tento nástroj automaticky identifikuje klientov s rovnakým telefónnym číslom alebo menom, zlúči ich značky, recepty a poznámky, a presmeruje ich históriu návštev.
+        </p>
+
+        @if (cleanupReport(); as report) {
+          <div class="mb-6 p-4 bg-white/5 border border-papi-gold/20 rounded-2xl text-left text-xs text-white/90 space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-gray-400">Zlúčené skupiny:</span>
+              <span class="font-bold text-papi-gold">{{ report.mergedGroupsCount }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-gray-400">Odstránené duplicity:</span>
+              <span class="font-bold text-papi-gold">{{ report.removedDuplicatesCount }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-gray-400">Presmerované návštevy:</span>
+              <span class="font-bold text-papi-gold">{{ report.reassignedVisitsCount }}</span>
+            </div>
+          </div>
+        }
+
+        <div class="flex flex-col gap-3 w-full font-sans">
+          <button 
+            (click)="runCleanupDuplicates()"
+            [disabled]="isCleaningDuplicates()"
+            class="w-full bg-gradient-to-r from-[#D8B589] to-[#EFDBC2] hover:opacity-90 active:scale-[0.98] disabled:opacity-50 text-black font-semibold py-3.5 rounded-xl transition-all shadow-[0_4px_20px_rgba(216,181,137,0.2)] flex items-center justify-center gap-2 uppercase tracking-wider text-xs">
+            @if (isCleaningDuplicates()) {
+              <mat-icon class="animate-spin text-[18px]">sync</mat-icon> Prebieha čistenie...
+            } @else {
+              <mat-icon class="text-[18px]">merge_type</mat-icon> Spustiť vyčistenie duplicity
+            }
+          </button>
+          
+          <button 
+            (click)="closeCleanupModal()"
+            class="w-full bg-white/5 hover:bg-white/10 border border-white/5 text-gray-400 font-medium py-3 rounded-xl transition-all text-xs tracking-wider uppercase">
+            {{ cleanupReport() ? 'HOTOVO' : 'ZRUŠIŤ' }}
           </button>
         </div>
       </div>

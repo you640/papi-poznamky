@@ -7,6 +7,12 @@ import { CustomerDetailComponent } from './customer-detail';
 import { CalendarViewComponent } from './calendar-view';
 import { db, type Customer, type Visit } from './db';
 import { animate, stagger } from 'motion';
+import { compressImage } from './image-utils';
+
+export interface PwaInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+}
 
 @Component({
   standalone: true,
@@ -29,6 +35,9 @@ export class App {
   bookingCustomer = signal<Customer | null>(null);
   isExportModalOpen = signal(false);
   isWipeModalOpen = signal(false);
+  isCleanupModalOpen = signal(false);
+  cleanupReport = signal<{ mergedGroupsCount: number; removedDuplicatesCount: number; reassignedVisitsCount: number } | null>(null);
+  isCleaningDuplicates = signal(false);
 
   // Quick Action / Long Press States
   longPressTimer: ReturnType<typeof setTimeout> | null = null;
@@ -37,7 +46,7 @@ export class App {
   menuPos = { x: 0, y: 0 };
 
   // Forms & Modal states
-  newCust = { name: '', lastName: '', phone: '', email: '', tags: '' };
+  newCust = { name: '', lastName: '', phone: '', email: '', tags: '', photo: '' };
   newVisit = { date: new Date().toISOString().split('T')[0], service: '', price: null as number | null, note: '' };
   exportFilters = { tag: '' };
 
@@ -47,6 +56,12 @@ export class App {
   isPersistenceLoading = signal(false);
   persistenceRequestFailed = signal(false);
 
+  // PWA & Network signals
+  deferredInstallPrompt = signal<PwaInstallPromptEvent | null>(null);
+  isStandalone = signal<boolean>(false);
+  isOffline = signal<boolean>(typeof navigator !== 'undefined' ? !navigator.onLine : false);
+  installBannerDismissed = signal<boolean>(typeof localStorage !== 'undefined' && localStorage.getItem('papi_install_dismissed') === 'true');
+
   // Expose isMobile detector property for templates
   get isMobile(): boolean {
     if (typeof window === 'undefined') return false;
@@ -55,6 +70,8 @@ export class App {
 
   constructor() {
     this.checkPersistence();
+    this.setupPwaAndNetworkListeners();
+
     // Initial and subsequent animations
     effect(() => {
       const items = this.customerItems();
@@ -68,6 +85,42 @@ export class App {
         );
       }
     });
+  }
+
+  private setupPwaAndNetworkListeners() {
+    if (typeof window === 'undefined') return;
+
+    // Detect standalone mode
+    const navWithStandalone = navigator as unknown as { standalone?: boolean };
+    const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || Boolean(navWithStandalone.standalone);
+    this.isStandalone.set(isStandaloneMode);
+
+    // Intercept beforeinstallprompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      this.deferredInstallPrompt.set(e as PwaInstallPromptEvent);
+    });
+
+    // Online / Offline status
+    window.addEventListener('online', () => this.isOffline.set(false));
+    window.addEventListener('offline', () => this.isOffline.set(true));
+  }
+
+  async installPwaApp() {
+    const promptEvent = this.deferredInstallPrompt();
+    if (!promptEvent) return;
+    promptEvent.prompt();
+    const choice = await promptEvent.userChoice;
+    if (choice && choice.outcome === 'accepted') {
+      this.deferredInstallPrompt.set(null);
+    }
+  }
+
+  dismissInstallBanner() {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('papi_install_dismissed', 'true');
+    }
+    this.installBannerDismissed.set(true);
   }
 
   async checkPersistence() {
@@ -294,12 +347,25 @@ export class App {
   }
 
   openNewCustomer() {
-    this.newCust = { name: '', lastName: '', phone: '', email: '', tags: '' };
+    this.newCust = { name: '', lastName: '', phone: '', email: '', tags: '', photo: '' };
     this.isAddingCustomer.set(true);
   }
 
   closeNewCustomer() {
     this.isAddingCustomer.set(false);
+  }
+
+  async onNewCustPhotoUpload(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      try {
+        const compressed = await compressImage(file, 800, 800, 0.82);
+        this.newCust.photo = compressed;
+      } catch (e) {
+        console.warn('Compress photo error:', e);
+      }
+    }
   }
 
   async saveNewCustomer() {
@@ -315,6 +381,7 @@ export class App {
         phone: this.newCust.phone.trim(),
         email: this.newCust.email.trim(),
         tags: tagsArray,
+        photo: this.newCust.photo || undefined,
         lastVisit: undefined
       };
 
@@ -382,5 +449,25 @@ export class App {
     await this.cs.wipeAllData();
     this.closeDetail();
     this.closeWipeModal();
+  }
+
+  // --- DUP CLEANUP LOGIC ---
+  openCleanupModal() {
+    this.cleanupReport.set(null);
+    this.isCleanupModalOpen.set(true);
+  }
+
+  closeCleanupModal() {
+    this.isCleanupModalOpen.set(false);
+  }
+
+  async runCleanupDuplicates() {
+    this.isCleaningDuplicates.set(true);
+    try {
+      const res = await this.cs.cleanupDuplicates();
+      this.cleanupReport.set(res);
+    } finally {
+      this.isCleaningDuplicates.set(false);
+    }
   }
 }
