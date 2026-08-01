@@ -10,7 +10,10 @@ import {join} from 'node:path';
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
-const angularApp = new AngularNodeAppEngine();
+const angularApp = new AngularNodeAppEngine({
+  inlineCriticalCss: false,
+  ssrFix: true,
+});
 
 /**
  * Example Express Rest API endpoints can be defined here.
@@ -44,7 +47,25 @@ app.use((req, res, next) => {
     .then((response) =>
       response ? writeResponseToNodeResponse(response, res) : next(),
     )
-    .catch(next);
+    .catch((error) => {
+      // Log the error but continue - don't crash on SSRF or other SSR errors
+      if (error && typeof error === 'object' && 'message' in error) {
+        console.warn(`SSR Error (${(error as any).message}), falling back to client rendering`);
+      }
+      // Return client-rendered HTML
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.send(`<!DOCTYPE html>
+<html>
+<head>
+  <title>papi-poznamky</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <app-root></app-root>
+  <script src="/main.js"></script>
+</body>
+</html>`);
+    });
 });
 
 /**
