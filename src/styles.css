@@ -12,9 +12,13 @@
   --color-papi-gold-light: #EFDBC2;
 }
 
-body {
+html, body {
   @apply bg-papi-dark text-white font-sans antialiased overflow-hidden;
   height: 100vh;
+  height: 100dvh;
+  min-height: 100dvh;
+  max-height: 100dvh;
+  width: 100%;
   margin: 0;
   padding: 0;
 }
