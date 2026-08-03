@@ -63,3 +63,64 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
+// Push Notification Event Listener (Web Push / Local Background)
+self.addEventListener('push', (event) => {
+  let data = {
+    title: 'Papi Hair Design CRM',
+    body: 'Máte nový nadchádzajúci termín v salóne!',
+    icon: '/icon-192.svg',
+    badge: '/icon-192.svg',
+    url: '/'
+  };
+
+  if (event.data) {
+    try {
+      data = Object.assign({}, data, event.data.json());
+    } catch (e) {
+      data.body = event.data.text();
+    }
+  }
+
+  const options = {
+    body: data.body,
+    icon: data.icon || '/icon-192.svg',
+    badge: data.badge || '/icon-192.svg',
+    tag: data.tag || 'papi-crm-notification',
+    data: data,
+    vibrate: [100, 50, 100],
+    renotify: true,
+    actions: [
+      { action: 'open', title: 'Otvoriť Papi CRM' }
+    ]
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
+});
+
+// Notification Click Event Listener (Deep link to customer / calendar)
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const data = event.notification.data || {};
+  const targetUrl = data.url || '/';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url && 'focus' in client) {
+          if (data.customerId) {
+            client.postMessage({ type: 'OPEN_CUSTOMER', customerId: data.customerId });
+          } else if (data.tab) {
+            client.postMessage({ type: 'SWITCH_TAB', tab: data.tab });
+          }
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    })
+  );
+});

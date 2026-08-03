@@ -3,6 +3,7 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { CustomerService } from './customer.service';
+import { NotificationService } from './notification.service';
 import { CustomerDetailComponent } from './customer-detail';
 import { CalendarViewComponent } from './calendar-view';
 import { db, type Customer, type Visit } from './db';
@@ -25,6 +26,7 @@ export interface PwaInstallPromptEvent extends Event {
 })
 export class App {
   cs = inject(CustomerService);
+  ns = inject(NotificationService);
   datePipe = inject(DatePipe);
   
   currentView = signal<'customers' | 'calendar'>('customers');
@@ -36,6 +38,7 @@ export class App {
   isExportModalOpen = signal(false);
   isWipeModalOpen = signal(false);
   isCleanupModalOpen = signal(false);
+  isNotificationModalOpen = signal(false);
   cleanupReport = signal<{ mergedGroupsCount: number; removedDuplicatesCount: number; reassignedVisitsCount: number } | null>(null);
   isCleaningDuplicates = signal(false);
 
@@ -122,6 +125,29 @@ export class App {
     // Online / Offline status
     window.addEventListener('online', () => this.isOffline.set(false));
     window.addEventListener('offline', () => this.isOffline.set(true));
+
+    // Listen for Service Worker Notification Click Deep Links
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'OPEN_CUSTOMER') {
+          const custId = Number(event.data.customerId);
+          const cust = this.cs.customersList().find(c => c.id === custId);
+          if (cust) {
+            this.selectCustomer(cust);
+          }
+        } else if (event.data && event.data.type === 'SWITCH_TAB') {
+          this.currentView.set(event.data.tab || 'calendar');
+        }
+      });
+    }
+  }
+
+  openNotificationModal() {
+    this.isNotificationModalOpen.set(true);
+  }
+
+  closeNotificationModal() {
+    this.isNotificationModalOpen.set(false);
   }
 
   async installPwaApp() {

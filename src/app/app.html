@@ -49,6 +49,16 @@
 
     <!-- ACTION BUTTONS -->
     <div class="flex items-center gap-2 ml-auto md:ml-4">
+      <button 
+        (click)="openNotificationModal()" 
+        class="circle-btn border-papi-gold/30 text-papi-gold hover:bg-papi-gold/10 hover:border-papi-gold/60 relative" 
+        [title]="ns.notificationsEnabled() ? 'Notifikácie salónu sú aktívne' : 'Nastavenia notifikácií salónu'">
+        <mat-icon class="text-[18px]">notifications</mat-icon>
+        @if (ns.notificationsEnabled()) {
+          <span class="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-papi-gold shadow-sm animate-pulse"></span>
+        }
+      </button>
+
       <button (click)="cs.forceReloadDefaultClients()" class="circle-btn border-papi-gold/20 text-papi-gold hover:bg-papi-gold/10 hover:border-papi-gold/40" title="Obnoviť / Importovať zoznam zo salónu (100+ klientov)">
         <mat-icon class="text-[18px]">sync</mat-icon>
       </button>
@@ -794,6 +804,122 @@
           class="w-full mt-4 bg-papi-gold text-black font-semibold py-3 rounded-xl transition-all shadow-md text-xs tracking-wider uppercase cursor-pointer hover:bg-papi-gold-light active:scale-[0.98]">
           Rozumiem
         </button>
+      </div>
+    </div>
+  }
+
+  <!-- PWA & WEB PUSH NOTIFICATION SETTINGS MODAL -->
+  @if (isNotificationModalOpen()) {
+    <div class="fixed inset-0 z-[190] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
+      <div class="bg-[#0e0e10] border border-papi-gold/30 rounded-3xl w-full max-w-lg p-6 shadow-2xl flex flex-col animate-in zoom-in-95 duration-200 relative overflow-hidden text-left">
+        
+        <div class="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-papi-gold/60 to-transparent"></div>
+        
+        <div class="flex items-center justify-between mb-5">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-papi-gold/15 border border-papi-gold/30 flex items-center justify-center text-papi-gold shadow-sm">
+              <mat-icon class="text-xl">notifications_active</mat-icon>
+            </div>
+            <div>
+              <h2 class="text-base font-bold font-display text-white">Notifikácie Salónu</h2>
+              <p class="text-[11px] text-papi-gold-light">Pripomienky termínov klientov & Receptúr</p>
+            </div>
+          </div>
+          <button 
+            (click)="closeNotificationModal()" 
+            class="p-1.5 text-white/40 hover:text-white bg-white/5 rounded-full transition-colors cursor-pointer">
+            <mat-icon class="text-sm flex items-center justify-center">close</mat-icon>
+          </button>
+        </div>
+
+        <!-- Notification Toggle Section -->
+        <div class="bg-white/[0.03] border border-white/10 rounded-2xl p-4 mb-4 flex items-center justify-between gap-4">
+          <div class="space-y-1">
+            <div class="text-xs font-semibold text-white flex items-center gap-2">
+              <span>Povoliť notifikácie salónu</span>
+              @if (ns.permissionState() === 'granted' && ns.notificationsEnabled()) {
+                <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">AKTÍVNE</span>
+              } @else if (ns.permissionState() === 'denied') {
+                <span class="px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] font-bold">ZABLOKOVANÉ</span>
+              } @else {
+                <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-bold">VYPNUTÉ</span>
+              }
+            </div>
+            <p class="text-[11px] text-white/60">
+              Pripomenie nadchádzajúce termíny a namiešané receptúry vlasov na iPhone, Macu aj Android.
+            </p>
+          </div>
+
+          <button 
+            (click)="ns.toggleNotifications(!ns.notificationsEnabled())"
+            class="px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer shadow-sm flex items-center gap-1.5"
+            [class.bg-papi-gold]="ns.notificationsEnabled()"
+            [class.text-black]="ns.notificationsEnabled()"
+            [class.bg-white/10]="!ns.notificationsEnabled()"
+            [class.text-white]="!ns.notificationsEnabled()">
+            <mat-icon class="text-sm">{{ ns.notificationsEnabled() ? 'notifications_active' : 'notifications_off' }}</mat-icon>
+            <span>{{ ns.notificationsEnabled() ? 'Zapnuté' : 'Zapnúť' }}</span>
+          </button>
+        </div>
+
+        <!-- Status Message if any -->
+        @if (ns.lastNotificationStatusMsg()) {
+          <div class="mb-4 text-xs p-3 rounded-xl bg-papi-gold/10 border border-papi-gold/20 text-papi-gold-light flex items-center gap-2">
+            <mat-icon class="text-sm flex items-center justify-center text-papi-gold">info</mat-icon>
+            <span>{{ ns.lastNotificationStatusMsg() }}</span>
+          </div>
+        }
+
+        <!-- Actions: Test & Refresh -->
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <button 
+            (click)="ns.sendTestNotification()" 
+            [disabled]="ns.permissionState() !== 'granted'"
+            class="px-3.5 py-2.5 bg-papi-gold/15 border border-papi-gold/30 rounded-xl text-xs font-semibold text-papi-gold hover:bg-papi-gold/25 disabled:opacity-40 disabled:pointer-events-none transition-all cursor-pointer flex items-center justify-center gap-2">
+            <mat-icon class="text-base">send</mat-icon>
+            <span>Otestovať notifikáciu</span>
+          </button>
+
+          <button 
+            (click)="ns.checkAndScheduleReminders()" 
+            [disabled]="!ns.notificationsEnabled()"
+            class="px-3.5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-xs font-semibold text-white/80 hover:bg-white/10 disabled:opacity-40 disabled:pointer-events-none transition-all cursor-pointer flex items-center justify-center gap-2">
+            <mat-icon class="text-base">schedule</mat-icon>
+            <span>Skontrolovať termíny</span>
+          </button>
+        </div>
+
+        <!-- Summary Info Box -->
+        <div class="bg-black/40 border border-white/5 rounded-2xl p-4 text-xs space-y-2 mb-4">
+          <div class="flex items-center justify-between text-white/70">
+            <span>Stav povolenia:</span>
+            <strong class="text-white uppercase font-mono text-[11px]">{{ ns.permissionState() }}</strong>
+          </div>
+          <div class="flex items-center justify-between text-white/70">
+            <span>Naplánované pripomienky (24h):</span>
+            <strong class="text-papi-gold font-bold">{{ ns.scheduledRemindersCount() }} termínov</strong>
+          </div>
+        </div>
+
+        <!-- iOS Safari & Browser Help -->
+        @if (ns.permissionState() === 'denied') {
+          <div class="bg-red-500/10 border border-red-500/20 rounded-2xl p-3.5 text-xs text-red-300 space-y-1">
+            <div class="font-bold flex items-center gap-1.5">
+              <mat-icon class="text-sm">warning</mat-icon>
+              <span>Notifikácie sú blokované v nastaveniach prehliadača</span>
+            </div>
+            <p class="text-[11px] text-red-200/80">
+              Pre povolenie kliknite na ikonu zámku/nastavení v adresnom riadku prehliadača a povoľte "Notifikácie". Na iPhone choďte do Nastavenia -> Papi CRM -> Notifikácie.
+            </p>
+          </div>
+        }
+
+        <button 
+          (click)="closeNotificationModal()" 
+          class="w-full mt-3 bg-papi-gold text-black font-semibold py-3 rounded-xl transition-all shadow-md text-xs tracking-wider uppercase cursor-pointer hover:bg-papi-gold-light active:scale-[0.98]">
+          Zatvoriť
+        </button>
+
       </div>
     </div>
   }
